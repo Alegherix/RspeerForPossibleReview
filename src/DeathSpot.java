@@ -126,6 +126,7 @@ public class DeathSpot extends Script {
         return getDyingPlayer()!=null && !listContainsPosition(getDyingPlayer().getPosition());
     }
 
+    /*
     public void handleDeathSpotLooting(){
         if(playerIsDyingAndNotOnList()){
             savePositionToList(getDyingPlayer().getPosition());
@@ -169,7 +170,7 @@ public class DeathSpot extends Script {
             updateTimer(returnTime);
         }
     }
-
+*/
 
     @Override
     public int loop() {

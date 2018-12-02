@@ -3,11 +3,13 @@ package Utility;
 import org.rspeer.runetek.adapter.component.Item;
 import org.rspeer.runetek.api.commons.BankLocation;
 import org.rspeer.runetek.api.component.Bank;
+import org.rspeer.runetek.api.component.tab.Combat;
 import org.rspeer.runetek.api.component.tab.Inventory;
 import org.rspeer.runetek.api.movement.Movement;
 import org.rspeer.script.Script;
 import org.rspeer.ui.Log;
 
+import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 
@@ -45,7 +47,13 @@ public abstract class BankHandling extends Script {
         }
     }
 
+    public static boolean notedMode(){
+        return Bank.getWithdrawMode()== Bank.WithdrawMode.NOTE;
+    }
 
+    public static void setNotedWithdrawals(){
+        Bank.setWithdrawMode(Bank.WithdrawMode.NOTE);
+    }
 
     public static boolean canSeeBank() {
         return BankLocation.getNearest().getPosition().distance() < 15;
@@ -65,21 +73,36 @@ public abstract class BankHandling extends Script {
         }
     }
 
-    public static void WalkAndDepositAllAndWithdraw(Predicate<Item> itemPredicate, int amount){
+    public static void walkAndDepositAllAndWithdraw(Predicate<Item> itemPredicate, int amount){
+        int tot = (int)Arrays.stream(Inventory.getItems(itemPredicate)).count();
+        Log.info("Total amount of potions to withdraw is: "+ amount);
+
         if(!canSeeBank()){
-            Log.info("Can't se bank so walking towards it");
+            Log.info("Can't see bank so walking towards it");
             walkToNearestBank();
         }
         else if(canSeeBank()){
-            if (!Bank.isOpen()) {
+            if (!Bank.isOpen() && tot != amount || (!Bank.isOpen() && amount==0)) {
+                Log.info("Opening Bank");
                 Bank.open();
             }
             else if (Bank.isOpen()) {
-                if(Inventory.isEmpty()){
-                    Bank.withdraw(itemPredicate,amount);
-                    Bank.close();
+
+                if(Inventory.isEmpty() && !Combat.isPoisoned()){
+                    Log.info("Withdrawing item from Predicate");
+                    if(!Inventory.contains(itemPredicate)){
+                        if(amount==0){
+                            amount=1;
+                        }
+                        Bank.withdraw(itemPredicate, amount);
+                    }
+                    else if(Inventory.contains(itemPredicate) || !Bank.contains(itemPredicate)){
+                        Bank.close();
+                    }
+
                 }
-                else if (Inventory.getItems().length > 0) {
+                else if (Inventory.getItems().length > amount || Combat.isPoisoned()) {
+                    Log.info("Depositing Inventory");
                     Bank.depositInventory();
                 }
             }

@@ -1,47 +1,46 @@
-import org.rspeer.runetek.adapter.scene.Pickable;
-import org.rspeer.runetek.api.movement.Movement;
-import org.rspeer.runetek.api.movement.pathfinding.region.util.Reachable;
-import org.rspeer.runetek.api.scene.Pickables;
-import org.rspeer.runetek.api.scene.Players;
+
+import Utility.BankHandling;
+import org.rspeer.runetek.adapter.component.Item;
+import org.rspeer.runetek.api.component.Bank;
+import org.rspeer.runetek.api.component.tab.Combat;
+import org.rspeer.runetek.api.component.tab.Inventory;
 import org.rspeer.script.Script;
 import org.rspeer.script.ScriptMeta;
-import org.rspeer.ui.Log;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.function.Predicate;
+
+import static Utility.RunningHandling.nPotionsToWithdraw;
+
 
 @ScriptMeta(developer = "Slazter", desc = "TestClass", name = "For various testing purposes")
 public class TestClass extends Script {
 
-    long startTime;
-    boolean playerHasDied = false;
+    private Predicate<Item> energyPredicate;
+
+    @Override
+    public void onStart() {
+        energyPredicate = item -> item.getName().startsWith("Energy");
+
+        super.onStart();
+    }
 
     @Override
     public int loop() {
-        if(DeathSpot.getDyingPlayer() !=null && !playerHasDied){
-            Log.info("Player has died");
-            startTime = System.currentTimeMillis();
-            Movement.walkTo(DeathSpot.getDyingPlayer().getPosition());
-            playerHasDied = true;
+
+        if(shouldBank()){
+            BankHandling.walkAndDepositAllAndWithdraw(energyPredicate, nPotionsToWithdraw());
         }
 
-        else if(playerHasDied){
-            startTimer();
-        }
-
-        return 300;
+        return 400;
     }
 
-    public void startTimer(){
-        Predicate<Pickable> pickablePredicate = itemToLoot -> Pickables.getNearest(pickable -> "Bones".equals(pickable.getName())).distance()<=1;
-        if(Pickables.getNearest(pickablePredicate)!=null){
-            long endTime = System.currentTimeMillis();
-            long timePassed = endTime - this.startTime;
-            long timePassedSeconds = timePassed/1000;
-            Log.info("Time Passed since Death: " + timePassed);
-            Log.info("Time Passed since Death in Seconds: "+ timePassedSeconds);
-        }
+    public static void main(String[] args) {
+
+    }
+
+    public boolean shouldBank(){
+        boolean keepOpen = Bank.isOpen() && Bank.contains(energyPredicate) && !Inventory.contains(energyPredicate);
+        return Inventory.getItems().length >27 || Combat.isPoisoned() || keepOpen;
     }
 
 }

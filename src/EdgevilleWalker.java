@@ -5,8 +5,8 @@ import org.rspeer.runetek.api.movement.position.Position;
 import org.rspeer.script.Script;
 import org.rspeer.script.ScriptMeta;
 
-@ScriptMeta(developer = "Slazter", desc = "Edge Walker", name = "Walks to Edgeville Bank")
-public class Walker extends Script {
+@ScriptMeta(developer = "Slazter", desc = "Edge EdgevilleWalker", name = "Walks to Edgeville Bank")
+public class EdgevilleWalker extends Script {
 
     @Override
     public int loop() {
