@@ -2,14 +2,17 @@ package Utility;
 
 import org.rspeer.runetek.adapter.component.Item;
 import org.rspeer.runetek.api.commons.BankLocation;
+import org.rspeer.runetek.api.commons.Time;
 import org.rspeer.runetek.api.component.Bank;
 import org.rspeer.runetek.api.component.tab.Combat;
 import org.rspeer.runetek.api.component.tab.Inventory;
 import org.rspeer.runetek.api.movement.Movement;
+import org.rspeer.runetek.api.scene.Players;
 import org.rspeer.script.Script;
 import org.rspeer.ui.Log;
 
 import java.util.Arrays;
+import java.util.Timer;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 
@@ -82,19 +85,23 @@ public abstract class BankHandling extends Script {
             walkToNearestBank();
         }
         else if(canSeeBank()){
-            if (!Bank.isOpen() && tot != amount || (!Bank.isOpen() && amount==0)) {
-                Log.info("Opening Bank");
-                Bank.open();
+            if(!Players.getLocal().isMoving() && !Bank.isOpen()){
+                if (!Bank.isOpen() && tot != amount || (!Bank.isOpen() && amount==0)) {
+                    Log.info("Opening Bank");
+                    Bank.open();
+                }
             }
-            else if (Bank.isOpen()) {
+            else {
+                Log.info("Bank is open");
 
-                if(Inventory.isEmpty() && !Combat.isPoisoned()){
+                if(Inventory.getFreeSlots() > amount){
                     Log.info("Withdrawing item from Predicate");
                     if(!Inventory.contains(itemPredicate)){
                         if(amount==0){
                             amount=1;
                         }
                         Bank.withdraw(itemPredicate, amount);
+                        Time.sleep(700);
                     }
                     else if(Inventory.contains(itemPredicate) || !Bank.contains(itemPredicate)){
                         Bank.close();

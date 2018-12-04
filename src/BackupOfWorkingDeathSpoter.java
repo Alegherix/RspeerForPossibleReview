@@ -9,10 +9,12 @@ import org.rspeer.script.Script;
 import org.rspeer.script.ScriptMeta;
 import org.rspeer.ui.Log;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 @ScriptMeta(developer = "Slazter", desc = "theBackup", name = "DeathSpot looterBackup")
 
@@ -117,8 +119,32 @@ public class BackupOfWorkingDeathSpoter extends Script {
         backupTime -= reduction;
     }
 
+    public static Pickable[] shuffleLootList(Pickable[] lootUnderPlayer){
+        if (lootUnderPlayer.length>0){
+            for (int i = 0; i < lootUnderPlayer.length; i++) {
+                int randomPos = ThreadLocalRandom.current().nextInt(0, lootUnderPlayer.length);
+
+                Pickable temp = lootUnderPlayer[i];
+                lootUnderPlayer[i] = lootUnderPlayer[randomPos];
+                lootUnderPlayer[randomPos] = temp;
+            }
+            return lootUnderPlayer;
+        }
+        else{
+            return null;
+        }
+    }
+
     public Pickable getLootUnderPlayer(){
-        return Pickables.getNearest(item -> loots.contains(item.getName()) && item.getPosition().distance(Players.getLocal().getPosition())<1);
+        Pickable[] lootUnderPlayer = shuffleLootList(Pickables.getAt(Players.getLocal().getPosition()));
+        Arrays.asList(lootUnderPlayer).retainAll(loots);
+        if(lootUnderPlayer!=null){
+            return lootUnderPlayer[0];
+        }
+        else{
+            return null;
+        }
+        //return Pickables.getNearest(item -> loots.contains(item.getName()) && item.getPosition().distance(Players.getLocal().getPosition())<1);
     }
 
     public void removeDeathInstance(){

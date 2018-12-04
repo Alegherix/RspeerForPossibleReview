@@ -10,6 +10,7 @@ import org.rspeer.runetek.adapter.scene.SceneObject;
 import org.rspeer.runetek.api.commons.Time;
 import org.rspeer.runetek.api.component.Bank;
 import org.rspeer.runetek.api.component.Interfaces;
+import org.rspeer.runetek.api.component.WorldHopper;
 import org.rspeer.runetek.api.component.tab.Combat;
 import org.rspeer.runetek.api.component.tab.Inventory;
 import org.rspeer.runetek.api.movement.Movement;
@@ -19,6 +20,7 @@ import org.rspeer.runetek.api.scene.Npcs;
 import org.rspeer.runetek.api.scene.Pickables;
 import org.rspeer.runetek.api.scene.Players;
 import org.rspeer.runetek.api.scene.SceneObjects;
+import org.rspeer.runetek.providers.RSWorld;
 import org.rspeer.script.Script;
 import org.rspeer.script.ScriptMeta;
 import org.rspeer.ui.Log;
@@ -29,8 +31,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static Utility.RunningHandling.*;
+import static Utility.WorldHandling.*;
 
 
 @ScriptMeta(developer = "Martin", desc = "Wilderness Looter", name = "Wildy Looter")
@@ -44,6 +48,9 @@ public class WildernessLooter extends Script {
     private static boolean timerStarted;
     private Predicate<Item> energyPredicate;
     private static Area WILDY_LOOT_AREA;
+    private boolean haveDied;
+    private Area lumbridge;
+
 
     @Override
     public void onStart() {
@@ -62,11 +69,11 @@ public class WildernessLooter extends Script {
         );
         dyingSpotsList = new LinkedList<>();
         deathAnimation = 836;
-        returnTime = 400;
+        //returnTime = 400;
         loots = Arrays.asList("Shark","Tuna potato","Anglerfish", "Dark crab", "Sea turtle", "Cooked karambwan","Manta ray", "Pineapple pizza", "Mushroom potato",
                 "Amethyst arrow", "Dragon arrow", "Onyx bolts (e)", "Dragonstone bolts (e)", "Dragonstone dragon bolts (e)", "Diamond dragon bolts (e)", "Amethyst broad bolts",
                 "Abyssal whip", "Abyssal dagger", "Scythe of vitur (uncharged)", "Ghrazi rapier", "Elder maul", "Saradomin sword", "Armadyl godsword", "Bandos godsword", "Saradomin godsword", "Zamorak godsword",
-                "3rd age longsword", "Granite maul", "Tzhaar-ket-om", "Dragon crossbow", "Dragon thrownaxe", "Dragon javelin", "Dragon dart", "Dragon dart(p++)", "Dragon dart(p+)", "Dragon dart(p)",
+                "3rd age longsword", "Granite maul", "Tzhaar-ket-om", "Dragon thrownaxe", "Dragon javelin", "Dragon dart", "Dragon dart(p++)", "Dragon dart(p+)", "Dragon dart(p)",
                 "Dragon 2h sword", "Dragon claws", "Dragon scimitar", "Dragon sword", "Dragon dagger(p++)", "Mystic hat (dark)", "Mystic hat (light)",
                 "Dharok's platelegs 0", "Dharok's platebody 0", "Dharok's helm 0", "Dharok's greataxe 0", "Ahrim's robetop 0", "Ahrim's robeskirt 0", "Ahrim's hood 0", "Ahrim's staff 0",
                 "Torag's platelegs 0", "Torag's platebody 0", "Torag's helm 0", "Guthan's warspear 0", "Guthan's platebody 0", "Guthan's helm 0", "Guthan's chainskirt 0",
@@ -83,111 +90,150 @@ public class WildernessLooter extends Script {
                 "Rune Platebody", "Karil's leathertop 0", "Karil's leatherskirt 0", "Karil's crossbow 0", "Elder chaos hood", "Elder chaos robe", "Elder chaos top", "Rune plateskirt", "Gilded plateskirt",
                 "Rune platelegs", "Gilded platelegs", "Gilded boots", "Rune knife", "Rune knife(p++)", "Rune knife(p+)", "Rune knife(p)", "Rune dart(p++)", "Rune dart(p+)", "Rune dart(p)", "Rune dart",
                 "Prayer potion(4)", "Prayer potion(3)", "Prayer potion(2)", "Prayer potion(1)", "Ring of recoil", "Bastion potion(4)", "Bastion potion(3)", "Bastion potion(2)","Bastion potion(1)",
-                "Rune crossbow","Monkfish","Dark bow", "Heavy ballista", "Light ballista", "Amulet of strength", "Dragon boots");
+                "Rune crossbow","Monkfish","Dark bow", "Heavy ballista", "Light ballista", "Amulet of strength", "Dragon boots", "Tome of fire (empty)", "Burnt page", "Wizard boots", "Regen bracelet");
+        lumbridge = Area.rectangular(3217, 3223, 3226, 3214);
         lootHaveSpawned = false;
         timerStarted = false;
+        haveDied=false;
         energyPredicate = item -> item.getName().startsWith("Energy");
+        Log.info("\n\n\n" + "~~~~~~~~Welcome to Wilderness Looter~~~~~~~~" +"\n\n\n");
         super.onStart();
     }
 
-    //Todo - Splitta upp WalkToLootArea till 2 metoder
-
     @Override
     public int loop() {
-        if(shouldBank()){
-            if(isDeathInList()){
-                dyingSpotsList.clear();
-            }
-            else if(shouldCrossDitch()){
-                crossDitchToBank();
-            }
-            else{
-                BankHandling.walkAndDepositAllAndWithdraw(energyPredicate, nPotionsToWithdraw());
-            }
+        returnTime = ThreadLocalRandom.current().nextInt(200,455);
+
+        if(loggedInAndShouldSwitch()){
+            Log.info("Switching World");
+            WorldHopper.hopTo(319);
         }
-        else if(!playerInLootArea()){
-            if(shouldDrinkEnergyPot()){
-                drinkEnergyPotion();
-            }
-            else if(shouldDropVials()){
-                dropEmptyVials();
-            }
-            else if(shouldRun()){
-                enableRun();
-            }
-            else{
-                walkToLootArea();
-            }
-        }
-        else if(playerInLootArea()){
-            if(isUnderAttack()){
-                if(CombatHandling.canAndShouldEat(50)){
-                    CombatHandling.eatFood();
-                }
-                else if(underNpcAttack()){
-                    Log.info("Under NPC Attack");
-                    walkRandomly();
-                }
-                else{
-                    Log.info("Under Player attack");
-                    runToSafety();
-                }
-
-            }
-            else if(shouldRun()){
-                enableRun();
-            }
-            else{
-
-                if(playerIsDyingAndNotOnList()){
-                    savePositionToList(getDyingPlayer().getPosition());
-                }
-
-                else if(!dyingSpotsList.isEmpty() && standingAtDeathPosition()){
-
-                    if(!timerStarted && lootSpawningSoon()){
-                        Log.info("Starting Timer");
-                        startBackupTimer();
-                    }
-
-                    else if(bonesAtDeathSpot() && !lootHaveSpawned){
-                        Log.info("Bones at Deathspot so loot have spawned");
-                        lootHaveSpawned = true;
-                    }
-
-                    else if(getLootUnderPlayer()!=null){
-                        Log.info("Trying to loot " + getLootUnderPlayer().getName());
-                        getLootUnderPlayer().interact("Take");
-                    }
-
-                    else if(backupTime<=0 || (lootHaveSpawned)){
-                        Log.info("BackupTime <=0 or loot have spawned and doesn't exist anymore");
-                        removeDeathInstance();
-                    }
-                    updateBackupTimer(returnTime);
-                }
-
-                else if(isDeathInList() && !Players.getLocal().isMoving() && !standingAtDeathPosition()){
-                    Log.info("Walking to "+ dyingSpotsList.getFirst().getDeathPosition());
-                    Log.info("Which should spawn in " + dyingSpotsList.getFirst().getDeathTime() + " ms");
-                    resetBackupTimerAndLoot();
-                    clearBadSpots();
-                    walkToSpot();
-                }
+        else if(isLoggedIn()){
+            if(lumbridge.contains(Players.getLocal().getPosition()) || haveDied){
+                haveDied=true;
 
                 if(isDeathInList()){
-                    updateTimer(returnTime);
-                    clearMissedDeathPositions();
+                    dyingSpotsList.clear();
                 }
-
-                else if(!isDeathInList()){
-                    startLooting();
+                else if(Players.getLocal().getPosition().getY()>=3487){
+                    haveDied=false;
+                }
+                else{
+                    Movement.walkTo(new Position(3089,3488,0));
                 }
 
             }
+            else if(shouldBank()){
+                if(isDeathInList()){
+                    dyingSpotsList.clear();
+                }
+                else if(shouldCrossDitch()){
+                    crossDitchToBank();
+                }
+                else{
+                    BankHandling.walkAndDepositAllAndWithdraw(energyPredicate, nPotionsToWithdraw());
+                }
+            }
+            else if(!playerInLootArea()){
+                if(shouldDrinkEnergyPot()){
+                    drinkEnergyPotion();
+                }
+                else if(shouldDropVials()){
+                    dropEmptyVials();
+                }
+                else if(shouldRun()){
+                    enableRun();
+                }
+                else{
+                    dyingSpotsList.clear();
+                    walkToLootArea();
+                }
+            }
+            else if(playerInLootArea()){
+                if(isUnderAttack()){
+                    if(CombatHandling.canAndShouldEat(50)){
+                        CombatHandling.eatFood();
+                    }
+                    else if(underNpcAttack()){
+                        Log.info("Under NPC Attack");
+                        walkRandomly();
+                    }
+                    else{
+                        Log.info("Under Player attack");
+                        runToSafety();
+                    }
 
+                }
+                else if(shouldRun()){
+                    enableRun();
+                }
+                else{
+
+                    if(playerIsDyingAndNotOnList()){
+                        savePositionToList(getDyingPlayer().getPosition());
+                    }
+
+                    else if(!dyingSpotsList.isEmpty() && standingAtDeathPosition()){
+
+                        if(!timerStarted && lootSpawningSoon()){
+                            startBackupTimer();
+                        }
+
+                        if(bonesAtDeathSpot() && lootShouldHaveSpawned() &&!lootHaveSpawned){
+                            lootHaveSpawned = true;
+                        }
+
+                        if(getLootUnderPlayer()!=null){
+                            getLootUnderPlayer().interact("Take");
+                        }
+
+                        else if(backupTime<=0 || (lootHaveSpawned)){
+                            removeDeathInstance();
+                        }
+                        updateBackupTimer(returnTime);
+                    }
+
+
+                    else if(isDeathInList() && !Players.getLocal().isMoving() && !standingAtDeathPosition()){
+                        Log.info("Walking to "+ dyingSpotsList.getFirst().getDeathPosition());
+                        Log.info("Which should spawn in " + dyingSpotsList.getFirst().getDeathTime() + " ms");
+                        resetBackupTimerAndLoot();
+                        clearBadSpots();
+                        walkToSpot();
+                    }
+
+                    if(isDeathInList()){
+                        updateTimer(returnTime);
+                        clearMissedDeathPositions();
+                    }
+
+                    else if(!isDeathInList() || isDeathInList() && !lootSpawningSoon()){
+                        lootWithPositionalRestrictions();
+                    }
+
+                }
+
+            }
         }
+
         return returnTime;
+    }
+
+
+    public static Pickable[] shuffleLootList(Pickable[] lootUnderPlayer){
+        if (lootUnderPlayer.length>0){
+            for (int i = 0; i < lootUnderPlayer.length; i++) {
+                int randomPos = ThreadLocalRandom.current().nextInt(0, lootUnderPlayer.length);
+
+                Pickable temp = lootUnderPlayer[i];
+                lootUnderPlayer[i] = lootUnderPlayer[randomPos];
+                lootUnderPlayer[randomPos] = temp;
+            }
+            return lootUnderPlayer;
+        }
+        else{
+            return null;
+        }
     }
 
     public void clearBadSpots(){
@@ -196,6 +242,26 @@ public class WildernessLooter extends Script {
                 dyingSpotsList.removeFirst();
             }
         }
+    }
+
+    //Todo - Implement skip target method
+
+
+    // Todo - Make algorithm for figuring out if we can loot
+    // Calculate total distance to run based on loots position
+    // Calculate time for the travel
+    // Calculate energy Drainage for the Travel
+    public boolean haveTimeToWalkToLoot(){
+        boolean runningEnabled = Movement.isRunEnabled();
+        int runEnergy = Movement.getRunEnergy();
+        Pickables.getNearest(item -> loots.contains(item.getName()));
+
+
+        if(isDeathInList()){
+            Position deathPosition = dyingSpotsList.getFirst().getDeathPosition();
+
+        }
+        return dyingSpotsList.getFirst().getDeathTime()>=9500;
     }
 
     public boolean otherGoodLoot(Position position){
@@ -218,6 +284,21 @@ public class WildernessLooter extends Script {
 
             if(item!=null){
                 item.interact("Take");
+            }
+        }
+    }
+
+    public void lootWithPositionalRestrictions(){
+        if(!Players.getLocal().isMoving()){
+
+            Predicate<Pickable> lootPredMyPos = loot -> (loots).contains(loot.getName())
+                    && loot.getPosition().distance(Players.getLocal().getPosition())<=10
+                    && loot.getPosition().getY()>=3522 // For making sure it's in wildy
+                    && loot.getPosition().getX()<=3107; // For making sure it's not past the river
+            Pickable loot = Pickables.getNearest(lootPredMyPos);
+
+            if(loot!=null){
+                loot.interact("Take");
             }
         }
     }
@@ -366,7 +447,18 @@ public class WildernessLooter extends Script {
     }
 
     public static Pickable getLootUnderPlayer(){
-        return Pickables.getNearest(item -> loots.contains(item.getName()) && item.getPosition().distance(Players.getLocal().getPosition())<1);
+        Pickable[] lootUnderPlayer = shuffleLootList(Pickables.getAt(Players.getLocal().getPosition()));
+        if(lootUnderPlayer!=null){
+            List<String> stringList = Arrays.stream(lootUnderPlayer).map(pickable -> pickable.getName()).collect(Collectors.toList());
+            stringList.retainAll(loots);
+
+            if(stringList.size()>0){
+                return Pickables.getNearest(stringList.get(0));
+            }
+        }
+
+        return null;
+        //return Pickables.getNearest(item -> loots.contains(item.getName()) && item.getPosition().distance(Players.getLocal().getPosition())<1);
     }
 
     public static void removeDeathInstance(){
