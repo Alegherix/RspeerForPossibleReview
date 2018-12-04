@@ -1,69 +1,64 @@
 package Utility;
 
 import org.rspeer.runetek.adapter.component.Item;
-import org.rspeer.runetek.adapter.scene.Pickable;
 import org.rspeer.runetek.api.component.tab.Inventory;
 import org.rspeer.runetek.api.movement.Movement;
+import org.rspeer.runetek.api.movement.position.Position;
 import org.rspeer.runetek.api.scene.Players;
 import org.rspeer.script.Script;
+import org.rspeer.ui.Log;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 public abstract class RunningHandling extends Script {
 
-    static Map<String, Double> weights = new HashMap<>();
+    static Map<String, Double> weights;
+    public static int msPerSquare = 300;
 
 
-    public static void drinkEnergyPotion(){
-        if(!Players.getLocal().isAnimating()){
-            Inventory.getFirst(item-> item.getName().startsWith("Energy")).interact("Drink");
-        }
-    }
-
-    public static void dropEmptyVials(){
-        Item[] dropItem = Inventory.getItems(i-> i.getName().startsWith("Energy") || i.getName().equals("Vial"));
-        Arrays.stream(dropItem).forEach(item -> item.interact("Drop"));
-    }
-
-    public static boolean shouldDrinkEnergyPot(){
-        return Movement.getRunEnergy()<=95 && Inventory.contains(item -> item.getName().startsWith("Energy"));
-    }
-
-    public static boolean shouldDropVials(){
-        return Inventory.contains("Vial") ||
-                (Inventory.contains(item -> item.getName().startsWith("Energy")) && Movement.getRunEnergy()>=100);
-    }
-
-    public static void drinkAndDrop(){
-        if(shouldDrinkEnergyPot()){
-            drinkEnergyPotion();
-        }
-        else if(shouldDropVials()){
-            dropEmptyVials();
-        }
-    }
-
-    public static int nPotionsToWithdraw(){
-        return (100 - Movement.getRunEnergy()) / 30;
-    }
-
-    public static double playerWeight(){
+    private static double playerWeight(){
         return Arrays.stream(Inventory.getItems())
                 .map(Item::getName)
                 .mapToDouble(RunningHandling::calculateWeight)
                 .sum();
     }
 
-    public static double calculateWeight(String item){
+    private static double calculateWeight(String item){
         return weights.getOrDefault(item, 0.0);
     }
 
+    public static double depletionRatePerSquare(){
+        double a = Math.min(playerWeight(), 64);
+        return ((a / 100)+ 0.64) / 2;
+    }
 
+    public static int nSquaresWeCanRunTo(){
+        return (int)(Movement.getRunEnergy() / depletionRatePerSquare());
+    }
 
-    public static boolean shouldRunToLoot(){
+    public static boolean energyEnoughForPosition(Position positionOfLoot){
+        return Players.getLocal().getPosition().distance(positionOfLoot) <= nSquaresWeCanRunTo();
+    }
 
-        return true;
+    public static boolean haveTimeForLoot(long nextLootSpawn, Position positionOfLoot){
+        int nSquaresBackAndForth = (int)(nextLootSpawn / msPerSquare) / 2;
+        return Players.getLocal().getPosition().distance(positionOfLoot) <= nSquaresBackAndForth;
+    }
+
+    public void walkRandomly(){
+        int diffX = ThreadLocalRandom.current().nextInt(-25,25);
+        int diffY = ThreadLocalRandom.current().nextInt(-25,25);
+        Movement.walkTo(new Position(Players.getLocal().getX()+diffX, Players.getLocal().getY()+diffY));
+    }
+
+    public static void enableRun(){
+        Movement.toggleRun(true);
+    }
+
+    public static boolean shouldRun(){
+        return Movement.getRunEnergy()>=30 && !Movement.isRunEnabled();
     }
 }

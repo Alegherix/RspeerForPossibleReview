@@ -163,7 +163,7 @@ public class DeathSpot extends Script {
         else if(isDeathInList() && !Players.getLocal().isMoving() && !standingAtDeathPosition()){
             Log.info("Walking to "+ dyingSpotsList.getFirst().getDeathPosition());
             resetBackupTimerAndLoot();
-            walkToSpot();
+            walkToDeathPos();
         }
 
         if(isDeathInList()){

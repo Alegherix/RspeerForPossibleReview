@@ -1,3 +1,5 @@
+package Walkers;
+
 import Utility.BankHandling;
 import org.rspeer.script.Script;
 import org.rspeer.script.ScriptMeta;

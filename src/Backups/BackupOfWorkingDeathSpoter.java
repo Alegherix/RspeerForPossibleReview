@@ -1,3 +1,5 @@
+package Backups;
+
 import org.rspeer.runetek.adapter.scene.Pickable;
 import org.rspeer.runetek.adapter.scene.Player;
 import org.rspeer.runetek.api.component.tab.Inventory;
@@ -249,7 +251,7 @@ public class BackupOfWorkingDeathSpoter extends Script {
 
         else if(isDeathInList() && lootSpawningSoon() && !Players.getLocal().isMoving() && !standingAtDeathPosition()){
             Log.info("Walking to "+ dyingSpotsList.getFirst().getDeathPosition());
-            walkToSpot();
+            walkToDeathPos();
         }
         */
         if(isDeathInList()){
@@ -260,3 +262,24 @@ public class BackupOfWorkingDeathSpoter extends Script {
     }
 }
 
+class DyingSpot {
+    private Position deathPosition;
+    private long deathTime;
+
+    public DyingSpot(Position deathPosition, long deathTime) {
+        this.deathPosition = deathPosition;
+        this.deathTime = deathTime;
+    }
+
+    public Position getDeathPosition() {
+        return deathPosition;
+    }
+
+    public void setDeathTime(long deathTime) {
+        this.deathTime = deathTime;
+    }
+
+    public long getDeathTime() {
+        return deathTime;
+    }
+}
