@@ -50,6 +50,21 @@ public abstract class BankHandling extends Script {
         }
     }
 
+    public static boolean walkToBankAndOpen(){
+        if(!canSeeBank()){
+            walkToNearestBank();
+        }
+        else if(canSeeBank()){
+            if(!Bank.isOpen()){
+                Bank.open();
+            }
+            else if(Bank.isOpen()){
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static boolean notedMode(){
         return Bank.getWithdrawMode()== Bank.WithdrawMode.NOTE;
     }
@@ -93,17 +108,24 @@ public abstract class BankHandling extends Script {
             }
             else {
                 Log.info("Bank is open");
+                if(Combat.isPoisoned()){
+                    Bank.depositInventory();
+                    Bank.close();
+                }
 
-                if(Inventory.getFreeSlots() > amount){
+                else if(Inventory.getFreeSlots() > amount && !Combat.isPoisoned()){
                     Log.info("Withdrawing item from Predicate");
                     if(!Inventory.contains(itemPredicate)){
+                        Log.info("We don't have energy potion in Inventory");
                         if(amount==0){
                             amount=1;
                         }
                         Bank.withdraw(itemPredicate, amount);
                         Time.sleep(700);
+                        Bank.close();
                     }
                     else if(Inventory.contains(itemPredicate) || !Bank.contains(itemPredicate)){
+                        Log.info("We have the energy potion in our inventory, or bank doesn't contain it");
                         Bank.close();
                     }
 

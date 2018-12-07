@@ -1,37 +1,27 @@
 package Utility;
 
 import org.rspeer.runetek.adapter.component.Item;
+import org.rspeer.runetek.api.Game;
 import org.rspeer.runetek.api.component.tab.Inventory;
 import org.rspeer.runetek.api.movement.Movement;
 import org.rspeer.runetek.api.movement.position.Position;
 import org.rspeer.runetek.api.scene.Players;
 import org.rspeer.script.Script;
-import org.rspeer.ui.Log;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 public abstract class RunningHandling extends Script {
 
-    static Map<String, Double> weights;
-    public static int msPerSquare = 300;
 
+    private static final HashMap<String, Double> weights = WeightHandling.initiateMap(new HashMap<>());
+    public static final int msPerSquareRunning = 400;
+    public static final int msPerSquareWalking = 805;
 
-    private static double playerWeight(){
-        return Arrays.stream(Inventory.getItems())
-                .map(Item::getName)
-                .mapToDouble(RunningHandling::calculateWeight)
-                .sum();
-    }
-
-    private static double calculateWeight(String item){
-        return weights.getOrDefault(item, 0.0);
-    }
 
     public static double depletionRatePerSquare(){
-        double a = Math.min(playerWeight(), 64);
+        double a = Math.min(Game.getClient().getWeight(), 64);
         return ((a / 100)+ 0.64) / 2;
     }
 
@@ -39,14 +29,22 @@ public abstract class RunningHandling extends Script {
         return (int)(Movement.getRunEnergy() / depletionRatePerSquare());
     }
 
-    public static boolean energyEnoughForPosition(Position positionOfLoot){
-        return Players.getLocal().getPosition().distance(positionOfLoot) <= nSquaresWeCanRunTo();
+    public static boolean haveTimeToWalk(long nextLootSpawn, Position myPosition, Position positionOfLoot){
+        double nSqBackAndForth = myPosition.distance(positionOfLoot)*2;
+        long msTaken =  msPerSquareWalking *(long)nSqBackAndForth;
+        return nextLootSpawn > (msTaken+1600);
     }
 
-    public static boolean haveTimeForLoot(long nextLootSpawn, Position positionOfLoot){
-        int nSquaresBackAndForth = (int)(nextLootSpawn / msPerSquare) / 2;
-        return Players.getLocal().getPosition().distance(positionOfLoot) <= nSquaresBackAndForth;
+
+    public static boolean haveTimeToRun(long nextLootSpawn, Position myPos, Position positionOfLoot){
+        double nSqBackAndForth = myPos.distance(positionOfLoot)*2;
+        long timeTakenBackAndForthRunning = msPerSquareRunning * (long)nSqBackAndForth;
+
+        return nextLootSpawn > timeTakenBackAndForthRunning && myPos.distance(positionOfLoot) <= nSquaresWeCanRunTo();
     }
+
+
+
 
     public void walkRandomly(){
         int diffX = ThreadLocalRandom.current().nextInt(-25,25);

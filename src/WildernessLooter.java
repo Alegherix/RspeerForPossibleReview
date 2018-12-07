@@ -1,7 +1,6 @@
 import Utility.*;
 import org.rspeer.runetek.adapter.component.InterfaceComponent;
 import org.rspeer.runetek.adapter.component.Item;
-import org.rspeer.runetek.adapter.scene.Npc;
 import org.rspeer.runetek.adapter.scene.Pickable;
 import org.rspeer.runetek.adapter.scene.Player;
 import org.rspeer.runetek.adapter.scene.SceneObject;
@@ -14,7 +13,6 @@ import org.rspeer.runetek.api.component.tab.Inventory;
 import org.rspeer.runetek.api.movement.Movement;
 import org.rspeer.runetek.api.movement.position.Area;
 import org.rspeer.runetek.api.movement.position.Position;
-import org.rspeer.runetek.api.scene.Npcs;
 import org.rspeer.runetek.api.scene.Pickables;
 import org.rspeer.runetek.api.scene.Players;
 import org.rspeer.runetek.api.scene.SceneObjects;
@@ -31,6 +29,7 @@ import static Utility.WorldHandling.*;
 import static Utility.PotionHandling.*;
 import static Utility.RunningHandling.*;
 import static Utility.LootHandling.*;
+import static Utility.InterfaceHandling.*;
 
 
 
@@ -48,7 +47,6 @@ public class WildernessLooter extends Script {
     private static Area WILDY_LOOT_AREA;
     private boolean haveDied;
     private static Area lumbridge;
-    private static Map<String, Double> weights;
 
 
     @Override
@@ -60,7 +58,7 @@ public class WildernessLooter extends Script {
         // Initiate Lists
         dyingSpotsList = new LinkedList<>();
         loots = LootHandling.initiateLoots();
-        weights = WeightHandling.initiateMap(new HashMap<>());
+        //weights = WeightHandling.initiateMap(new HashMap<>());
 
         //Initiate Variables
         deathAnimation = 836;
@@ -72,8 +70,7 @@ public class WildernessLooter extends Script {
         energyPredicate = item -> item.getName().startsWith("Energy");
         generalLootPredicate = loot ->
                 loot.getPosition().getY()>=3522 && loot.getPosition().getY()<=3563 &&
-                loot.getPosition().getX() >=3057 && loot.getPosition().getX()<=3107 &&
-                loots.contains(loot.getName());
+                loot.getPosition().getX() >=3057 && loot.getPosition().getX()<=3107 && loots.contains(loot.getName());
 
 
         Log.info("\n\n\n" + "~~~~~~~~Welcome to Wilderness Looter~~~~~~~~" +"\n\n\n");
@@ -91,6 +88,7 @@ public class WildernessLooter extends Script {
         else if(isLoggedIn()){
             if(lumbridge.contains(Players.getLocal().getPosition()) || haveDied){
                 haveDied=true;
+                enableRun();
 
                 if(isDeathInList()){
                     dyingSpotsList.clear();
@@ -109,6 +107,9 @@ public class WildernessLooter extends Script {
                 }
                 else if(shouldCrossDitch()){
                     crossDitchToBank();
+                }
+                else if(CombatHandling.canAndShouldEat(60)){
+                    CombatHandling.eatFood();
                 }
                 else{
                     BankHandling.walkAndDepositAllAndWithdraw(energyPredicate, nPotionsToWithdraw());
@@ -149,16 +150,11 @@ public class WildernessLooter extends Script {
                         savePositionToList(getDyingPlayer().getPosition());
                     }
 
-                    else if(shouldLootWithRestrictions()){
-                        if(!Movement.isRunEnabled()){
-                            enableRun();
-                        }
-                        else{
-                            itemToLootBasedOnRestrictions();
-                        }
+                    else if(shouldLoot()){
+                        itemToLootBasedOnWalking().interact("Take");
                     }
 
-
+                    // This part deals with what happends when we stand at the Location where player died
                     else if(!dyingSpotsList.isEmpty() && standingAtDeathPosition()){
 
 
@@ -181,16 +177,25 @@ public class WildernessLooter extends Script {
                     }
 
 
-                    else if(isDeathInList() && !Players.getLocal().isMoving() && !standingAtDeathPosition()){
-                        Log.info("Walking to "+ dyingSpotsList.getFirst().getDeathPosition());
-                        Log.info("Which should spawn in " + dyingSpotsList.getFirst().getDeathTime() + " ms");
+                    // This part deals with walking to the death position
+                    else if(isDeathInList() && !standingAtDeathPosition()){
+                        //Log.info("Walking to "+ dyingSpotsList.getFirst().getDeathPosition());
+                        //Log.info("Loot should spawn in " + dyingSpotsList.getFirst().getDeathTime() + " ms");
                         resetBackupTimerAndLoot();
                         clearBadSpots();
-                        walkToDeathPos();
-                    }
+                        if(!Movement.isRunEnabled() && Movement.getRunEnergy()>=1 && firstDeathTime()<=2500){
+                            enableRun();
+                        }
+                        if(isDeathInList() && !Players.getLocal().isMoving()){
+                            walkToDeathPos();
+                        }
 
+                    }
                     if(isDeathInList()){
                         updateTimer(returnTime);
+                        if(!standingAtDeathPosition() && haveTarget()){
+                            abandonTarget();
+                        }
                         clearMissedDeathPositions();
                     }
 
@@ -208,50 +213,20 @@ public class WildernessLooter extends Script {
 
     // This part is for Calculating if we should run to Loot
 
-    private static double playerWeight(){
-        return Arrays.stream(Inventory.getItems())
-                .map(Item::getName)
-                .mapToDouble(WildernessLooter::calculateWeight)
-                .sum();
+
+    public boolean shouldLoot(){
+        return isDeathInList() && !Players.getLocal().isMoving() &&
+                itemToLootBasedOnWalking()!=null
+                && haveTimeToWalk(firstDeathTime(), Players.getLocal().getPosition(), firstDeathPos());
     }
 
-    private static double calculateWeight(String item){
-        return weights.getOrDefault(item, 0.0);
+    public Pickable itemToLootBasedOnWalking(){
+        Predicate<Pickable> predicate = item -> item.getPosition().distance(firstDeathPos())<=8;
+        return Pickables.getNearest(generalLootPredicate.and(predicate));
     }
 
-    public static double depletionRatePerSquare(){
-        double a = Math.min(playerWeight(), 64);
-        return ((a / 100)+ 0.64) / 2;
-    }
-
-    public static int nSquaresWeCanRunTo(){
-        return (int)(Movement.getRunEnergy() / depletionRatePerSquare());
-    }
-
-    public static boolean energyEnoughForPosition(Position positionOfLoot){
-        return Players.getLocal().getPosition().distance(positionOfLoot) <= nSquaresWeCanRunTo();
-    }
-
-    public static boolean haveTimeForLoot(long nextLootSpawn, Position positionOfLoot){
-        int nSquaresBackAndForth = (int)(nextLootSpawn / msPerSquare) / 2;
-        return Players.getLocal().getPosition().distance(positionOfLoot) <= nSquaresBackAndForth;
-    }
-
-
-    public boolean shouldLootWithRestrictions(){
-        return isDeathInList() && haveTimeForLoot(firstDeathTime(), firstDeathPos());
-    }
-
-    public Pickable itemToLootBasedOnRestrictions(){
-        Predicate<Pickable> itemPred = item -> energyEnoughForPosition(item.getPosition()) &&
-                haveTimeForLoot(firstDeathTime(), firstDeathPos());
-        Pickable[] loots = Pickables.getLoaded(generalLootPredicate.and(itemPred));
-        loots = LootHandling.shuffleLootList(loots);
-        return (loots!=null)? loots[0] : null;
-    }
 
     //                      Here the part with regards to Calculating the Looting Ends.
-
 
     public void clearBadSpots(){
         if(isDeathInList()){
@@ -276,21 +251,6 @@ public class WildernessLooter extends Script {
         return dyingSpotsList.getFirst().getDeathPosition();
     }
 
-    public void lootingWithRestrictions(){
-        if(!Players.getLocal().isMoving()){
-            Pickable loot = null;
-
-            if(isDeathInList()){
-                int time = (int) dyingSpotsList.getFirst().getDeathTime();
-                loot = Pickables.getNearest(item -> haveTimeForLoot(time, item.getPosition()));
-            }
-
-
-            if(loot!=null){
-                loot.interact("Take");
-            }
-        }
-    }
 
     public void lootWithoutRestrictions(){
         if(!Players.getLocal().isMoving()){
@@ -318,8 +278,9 @@ public class WildernessLooter extends Script {
 
 
     public boolean shouldBank(){
-        boolean keepOpen = Bank.isOpen() && Bank.contains(energyPredicate) && !Inventory.contains(energyPredicate);
-        return Inventory.getItems().length >27 || Combat.isPoisoned() || keepOpen;
+        //boolean keepOpen = Bank.isOpen() && Bank.contains(energyPredicate) && !Inventory.contains(energyPredicate);
+        return Inventory.getItems().length >27 || Combat.isPoisoned() ||
+                Bank.isOpen() && Bank.contains(energyPredicate) && !Inventory.contains(energyPredicate);
     }
 
     public boolean shouldCrossDitch(){
@@ -377,8 +338,8 @@ public class WildernessLooter extends Script {
     }
 
     public static void savePositionToList(Position deathPosition){
-        Log.info("Saving a "+ deathPosition +" to List of deathSpots");
-        long deathTime = 61500;
+        //Log.info("Saving a "+ deathPosition + " to List of deathSpots");
+        long deathTime = 59000;
         dyingSpotsList.add(new DyingSpot(deathPosition, deathTime));
     }
 
@@ -404,7 +365,7 @@ public class WildernessLooter extends Script {
     }
 
     public boolean lootShouldHaveSpawned(){
-        return dyingSpotsList.getFirst().getDeathTime()<=0;
+        return dyingSpotsList.getFirst().getDeathTime()<=-1000;
     }
 
     public static void walkToDeathPos(){
@@ -444,7 +405,7 @@ public class WildernessLooter extends Script {
     }
 
     public static void removeDeathInstance(){
-        Log.info("Removing " + dyingSpotsList.getFirst().getDeathPosition() + " from list");
+        //Log.info("Removing " + dyingSpotsList.getFirst().getDeathPosition() + " from list");
         dyingSpotsList.removeFirst();
     }
 

@@ -1,6 +1,7 @@
 package Utility;
 
 import org.rspeer.runetek.adapter.component.Item;
+import org.rspeer.runetek.api.commons.Time;
 import org.rspeer.runetek.api.component.tab.Inventory;
 import org.rspeer.runetek.api.movement.Movement;
 import org.rspeer.runetek.api.scene.Players;
@@ -13,6 +14,7 @@ public abstract class PotionHandling extends Script {
     public static void drinkEnergyPotion() {
         if (!Players.getLocal().isAnimating()) {
             Inventory.getFirst(item -> item.getName().startsWith("Energy")).interact("Drink");
+            Time.sleep(500);
         }
     }
 

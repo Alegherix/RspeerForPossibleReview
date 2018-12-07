@@ -1,12 +1,27 @@
 package Utility;
 
 import org.rspeer.runetek.adapter.scene.Pickable;
+import org.rspeer.runetek.api.movement.position.Position;
+import org.rspeer.runetek.api.scene.Players;
+import org.rspeer.ui.Log;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public abstract class LootHandling{
+
+    private static Comparator<Pickable> sortByPosition(){
+        Position myPos = Players.getLocal().getPosition();
+        return (p1, p2) -> (int)p1.getPosition().distance(myPos) - (int)p2.getPosition().distance(myPos);
+    }
+
+    public static Pickable[] sortLootList(Pickable[] lootUnderPlayer){
+        Pickable[] newLoots =  (Arrays.stream(lootUnderPlayer).sorted(sortByPosition()).toArray(Pickable[]::new));
+        newLoots = Arrays.copyOfRange(newLoots,0,3);
+        return shuffleLootList(newLoots);
+    }
 
     public static Pickable[] shuffleLootList(Pickable[] lootUnderPlayer){
         if (lootUnderPlayer.length>0){
@@ -45,6 +60,9 @@ public abstract class LootHandling{
                 "Rune Platebody", "Karil's leathertop 0", "Karil's leatherskirt 0", "Karil's crossbow 0", "Elder chaos hood", "Elder chaos robe", "Elder chaos top", "Rune plateskirt", "Gilded plateskirt",
                 "Rune platelegs", "Gilded platelegs", "Gilded boots", "Rune knife", "Rune knife(p++)", "Rune knife(p+)", "Rune knife(p)", "Rune dart(p++)", "Rune dart(p+)", "Rune dart(p)", "Rune dart",
                 "Prayer potion(4)", "Prayer potion(3)", "Prayer potion(2)", "Prayer potion(1)", "Ring of recoil", "Bastion potion(4)", "Bastion potion(3)", "Bastion potion(2)","Bastion potion(1)",
-                "Rune crossbow","Monkfish","Dark bow", "Heavy ballista", "Light ballista", "Amulet of strength", "Dragon boots", "Tome of fire (empty)", "Burnt page", "Wizard boots", "Regen bracelet");
+                "Rune crossbow","Monkfish","Dark bow", "Heavy ballista", "Light ballista", "Amulet of strength", "Dragon boots", "Tome of fire (empty)", "Burnt page", "Wizard boots", "Regen bracelet",
+                "Mysterious emblem", "Amulet of glory(1)", "Amulet of glory(2)", "Amulet of glory(3)", "Amulet of glory(4)", "Amulet of glory(5)", "Amulet of glory(6)",
+                "Mysterious emblem (tier 3)", "Mysterious emblem (tier 4)", "Mysterious emblem (tier 5)", "Mysterious emblem (tier 6)", "Mysterious emblem (tier 7)", "Mysterious emblem (tier 8)",
+                "Mysterious emblem (tier 9)");
     }
 }
