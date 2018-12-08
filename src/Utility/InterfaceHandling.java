@@ -9,7 +9,7 @@ public abstract class InterfaceHandling extends Script {
 
 
     public static boolean haveTarget(){
-        return Interfaces.getComponent(90,45).getText()!=null && !"None".equals(Interfaces.getComponent(90,45).getText());
+        return Interfaces.getComponent(90,47).getText()!=null && !"None".equals(Interfaces.getComponent(90,47).getText());
     }
 
     public static void abandonTarget(){
@@ -17,7 +17,7 @@ public abstract class InterfaceHandling extends Script {
             Dialog.process(0);
         }
         else{
-            Interfaces.getComponent(90,48).interact("Abandon target");
+            Interfaces.getComponent(90,50).interact("Abandon target");
         }
 
     }
