@@ -9,8 +9,7 @@ public abstract class InterfaceHandling extends Script {
 
 
     public static boolean haveTarget(){
-        String target = Interfaces.getComponent(90,45).getText();
-        return target!=null && !"None".equals(target);
+        return Interfaces.getComponent(90,45).getText()!=null && !"None".equals(Interfaces.getComponent(90,45).getText());
     }
 
     public static void abandonTarget(){
@@ -29,5 +28,9 @@ public abstract class InterfaceHandling extends Script {
 
     public static InterfaceComponent secondTradeWindow(){
         return Interfaces.getComponent(334,4);
+    }
+
+    public static final InterfaceComponent PUT_UP_ALL_GE(){
+        return Interfaces.getComponent(465,24,48);
     }
 }

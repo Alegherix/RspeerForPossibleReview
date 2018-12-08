@@ -9,9 +9,7 @@ import org.rspeer.script.Script;
 import org.rspeer.script.ScriptMeta;
 import org.rspeer.ui.Log;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static Utility.BankHandling.*;
 import static Utility.InterfaceHandling.*;
@@ -20,7 +18,7 @@ import static Utility.InterfaceHandling.*;
 public class Muletrader extends Script {
 
 
-    private final String PLAYER_TRADING_TO = "psychoalfa9";
+    private final String PLAYER_TRADING_TO = "mixm33r";
     private final String TRADE_TEXT = "Waiting for other player...";
     boolean shouldTrade;
     boolean secondScreenWasVisible;
@@ -37,6 +35,10 @@ public class Muletrader extends Script {
     }
 
     public void offerEntireInventory(){
+        for(Item i : Inventory.getItems()){
+            Trade.offerAll(i.getName());
+            Time.sleep(ThreadLocalRandom.current().nextInt(65,125));
+        }
         Trade.offerAll(item -> Inventory.contains(item.getName()));
     }
 
@@ -50,16 +52,12 @@ public class Muletrader extends Script {
 
     public void tradePlayer(){
         if(Trade.isOpen()){
-            //Log.info("Trade window is open");
             if(!Inventory.isEmpty()){
-                //Log.info("We have items, therfore we should offer them");
                 offerEntireInventory();
             }
             else if(Inventory.isEmpty()){
-                //Log.info("Inventory is empty, so we should accept");
                 if(secondTradeWindow()!=null){
                     if(!TRADE_TEXT.equals(secondTradeWindow().getText())){
-                        //Log.info("Seting that the second screen was visible");
                         secondScreenWasVisible=true;
                         Trade.accept();
                     }
@@ -75,11 +73,9 @@ public class Muletrader extends Script {
             playerToTrade().interact("Trade with");
             Time.sleep(1500);
         }
-
-
     }
 
-    public void withdrawInventory(){
+    public void withdrawEverythingNoted(){
         //Assume bank is open
         if(walkToBankAndOpen()) {
             if (!notedMode()) {
@@ -87,6 +83,10 @@ public class Muletrader extends Script {
             }
             else if (!Inventory.isFull() && Bank.getCount()>0) {
                 Item[] items = Bank.getItems();
+                for (int i = 0; i < items.length; i++) {
+                    Bank.withdrawAll(items[i].getName());
+                    Time.sleep(ThreadLocalRandom.current().nextInt(65,185));
+                }
             }
             else if(Inventory.isFull() || Bank.getItems().length==0){
                 //Log.info("Inventory is full, or no more items in bank, Closing bank");
@@ -102,12 +102,13 @@ public class Muletrader extends Script {
 
     @Override
     public int loop() {
-        if(secondScreenWasVisible && shouldTrade && !bankIsEmpty){
-            Log.info("Updating shouldTrade");
+       // withdrawAllItemsFromBank();
+
+        if(secondScreenWasVisible && shouldTrade && !bankIsEmpty && secondTradeWindow()==null){
             shouldTrade = false;
             secondScreenWasVisible = false;
         }
-        else if(secondScreenWasVisible && bankIsEmpty){
+        else if(secondScreenWasVisible && bankIsEmpty && secondTradeWindow()==null){
             Log.info("We've cleared the bank by now");
             Log.info("Time to logout");
             Time.sleep(15000);
@@ -123,8 +124,9 @@ public class Muletrader extends Script {
         }
         else{
            Log.info("Should withdraw items from bank");
-           withdrawInventory();
+           withdrawEverythingNoted();
         }
-        return 400;
+
+        return 600;
     }
 }

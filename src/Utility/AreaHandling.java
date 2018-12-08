@@ -1,5 +1,7 @@
 package Utility;
 
+import org.rspeer.runetek.api.commons.BankLocation;
+import org.rspeer.runetek.api.movement.pathfinding.region.util.Reachable;
 import org.rspeer.runetek.api.movement.position.Area;
 import org.rspeer.runetek.api.movement.position.Position;
 import org.rspeer.script.Script;
@@ -20,5 +22,9 @@ public abstract class AreaHandling extends Script {
                         new Position(3039, 3522, 0)
                 }
         );
+    }
+
+    public static final Position GRAND_EXCHANGE(){
+        return BankLocation.GRAND_EXCHANGE.getPosition();
     }
 }

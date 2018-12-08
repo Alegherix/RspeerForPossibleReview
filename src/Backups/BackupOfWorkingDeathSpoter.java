@@ -18,7 +18,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-@ScriptMeta(developer = "Slazter", desc = "theBackup", name = "DeathSpot looterBackup")
 
 public class BackupOfWorkingDeathSpoter extends Script {
     private static int deathAnimation;
