@@ -1,6 +1,7 @@
 package Utility;
 
 import org.rspeer.runetek.adapter.component.Item;
+import org.rspeer.runetek.api.commons.Time;
 import org.rspeer.runetek.api.component.tab.Combat;
 import org.rspeer.runetek.api.component.tab.Inventory;
 import org.rspeer.runetek.api.component.tab.Skill;
@@ -61,5 +62,6 @@ public abstract class CombatHandling extends Script {
 
     public static void eatFood(){
         Inventory.getFirst(item -> item.containsAction("Eat")).interact("Eat");
+        Time.sleep(RandomHandling.randomNumber(350,650));
     }
 }

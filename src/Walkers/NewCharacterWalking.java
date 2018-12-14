@@ -1,5 +1,6 @@
 package Walkers;
 
+import Utility.RunningHandling;
 import org.rspeer.runetek.api.commons.math.Random;
 import org.rspeer.runetek.api.component.tab.Inventory;
 import org.rspeer.runetek.api.movement.Movement;

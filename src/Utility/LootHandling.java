@@ -5,10 +5,12 @@ import org.rspeer.runetek.api.movement.position.Position;
 import org.rspeer.runetek.api.scene.Players;
 import org.rspeer.ui.Log;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 public abstract class LootHandling{
 
@@ -63,6 +65,12 @@ public abstract class LootHandling{
                 "Rune crossbow","Monkfish","Dark bow", "Heavy ballista", "Light ballista", "Amulet of strength", "Dragon boots", "Tome of fire (empty)", "Burnt page", "Wizard boots", "Regen bracelet",
                 "Mysterious emblem", "Amulet of glory(1)", "Amulet of glory(2)", "Amulet of glory(3)", "Amulet of glory(4)", "Amulet of glory(5)", "Amulet of glory(6)",
                 "Mysterious emblem (tier 3)", "Mysterious emblem (tier 4)", "Mysterious emblem (tier 5)", "Mysterious emblem (tier 6)", "Mysterious emblem (tier 7)", "Mysterious emblem (tier 8)",
-                "Mysterious emblem (tier 9)");
+                "Mysterious emblem (tier 9)", "Combat bracelet", "Combat bracelet(4)", "Combat bracelet(3)", "Combat bracelet(2)","Combat bracelet(1)", "Zamorak monk bottom", "Zamorak monk top",
+                "Amulet of power", "Phoenix necklace");
+    }
+
+    public static List<String> lootsToSell(){
+        List<String> itemsToRemove = Arrays.asList("Amulet of glory(1)", "Amulet of glory(2)", "Amulet of glory(3)", "Amulet of glory(5)");
+        return initiateLoots().stream().filter(string -> !itemsToRemove.contains(string)).collect(Collectors.toList());
     }
 }

@@ -4,8 +4,11 @@ import org.rspeer.runetek.adapter.component.Item;
 import org.rspeer.runetek.adapter.scene.Pickable;
 import org.rspeer.runetek.adapter.scene.Player;
 import org.rspeer.runetek.adapter.scene.SceneObject;
+import org.rspeer.runetek.api.Game;
+import org.rspeer.runetek.api.Worlds;
 import org.rspeer.runetek.api.commons.Time;
 import org.rspeer.runetek.api.component.Bank;
+import org.rspeer.runetek.api.component.Dialog;
 import org.rspeer.runetek.api.component.Interfaces;
 import org.rspeer.runetek.api.component.WorldHopper;
 import org.rspeer.runetek.api.component.tab.Combat;
@@ -25,11 +28,9 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static Utility.WorldHandling.*;
 import static Utility.PotionHandling.*;
 import static Utility.RunningHandling.*;
 import static Utility.LootHandling.*;
-import static Utility.InterfaceHandling.*;
 
 
 
@@ -42,6 +43,8 @@ public class WildernessLooter extends Script {
     private static boolean lootHaveSpawned;
     private static long backupTime;
     private static boolean timerStarted;
+    private static final int WORLD = 318;
+
     private Predicate<Item> energyPredicate;
     private Predicate<Pickable> generalLootPredicate;
     private static Area WILDY_LOOT_AREA;
@@ -58,7 +61,6 @@ public class WildernessLooter extends Script {
         // Initiate Lists
         dyingSpotsList = new LinkedList<>();
         loots = LootHandling.initiateLoots();
-        //weights = WeightHandling.initiateMap(new HashMap<>());
 
         //Initiate Variables
         deathAnimation = 836;
@@ -81,11 +83,11 @@ public class WildernessLooter extends Script {
     public int loop() {
         returnTime = ThreadLocalRandom.current().nextInt(200,455);
 
-        if(loggedInAndShouldSwitch()){
+        if(Game.isLoggedIn() && Worlds.getCurrent()!=WORLD){
             Log.info("Switching World");
-            WorldHopper.hopTo(319);
+            WorldHopper.hopTo(WORLD);
         }
-        else if(isLoggedIn()){
+        else if(Game.isLoggedIn()){
             if(lumbridge.contains(Players.getLocal().getPosition()) || haveDied){
                 haveDied=true;
                 enableRun();
@@ -179,8 +181,6 @@ public class WildernessLooter extends Script {
 
                     // This part deals with walking to the death position
                     else if(isDeathInList() && !standingAtDeathPosition()){
-                        //Log.info("Walking to "+ dyingSpotsList.getFirst().getDeathPosition());
-                        //Log.info("Loot should spawn in " + dyingSpotsList.getFirst().getDeathTime() + " ms");
                         resetBackupTimerAndLoot();
                         clearBadSpots();
                         if(!Movement.isRunEnabled() && Movement.getRunEnergy()>=1 && firstDeathTime()<=2500){
@@ -283,19 +283,7 @@ public class WildernessLooter extends Script {
                 Bank.isOpen() && Bank.contains(energyPredicate) && !Inventory.contains(energyPredicate);
     }
 
-    public boolean shouldCrossDitch(){
-        return Players.getLocal().getY()>3523;
-    }
 
-    public void crossDitchToBank(){
-        SceneObject ditch = SceneObjects.getNearest("Wilderness Ditch");
-        if(ditch!=null && Players.getLocal().getPosition().getY()>=3523){
-            ditch.interact("Cross");
-        }
-        else{
-            Movement.walkTo(new Position(Players.getLocal().getX(),3523));
-        }
-    }
 
     boolean playerInLootArea(){
         return WILDY_LOOT_AREA.contains(Players.getLocal().getPosition());
@@ -422,5 +410,35 @@ public class WildernessLooter extends Script {
 
     public static boolean playerIsDyingAndNotOnList(){
         return getDyingPlayer()!=null && !listContainsPosition(getDyingPlayer().getPosition());
+    }
+
+    public static boolean shouldCrossDitch(){
+        return Players.getLocal().getY()>3523;
+    }
+
+    public static void crossDitchToBank(){
+        SceneObject ditch = SceneObjects.getNearest("Wilderness Ditch");
+        if(ditch!=null && Players.getLocal().getPosition().getY()>=3523){
+            ditch.interact("Cross");
+        }
+        else{
+            Movement.walkTo(new Position(Players.getLocal().getX(),3523));
+        }
+    }
+
+    //This deals with the interface stuff
+
+    public static boolean haveTarget(){
+        return Interfaces.getComponent(90,47).getText()!=null && !"None".equals(Interfaces.getComponent(90,47).getText());
+    }
+
+    public static void abandonTarget(){
+        if(Dialog.isOpen()){
+            Dialog.process(0);
+        }
+        else{
+            Interfaces.getComponent(90,50).interact("Abandon target");
+            Time.sleep(RandomHandling.randomNumber(350,450));
+        }
     }
 }

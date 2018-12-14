@@ -1,5 +1,4 @@
-import Utility.AreaHandling;
-import Utility.RandomHandling;
+package Utility;
 import org.rspeer.runetek.adapter.component.Item;
 import org.rspeer.runetek.adapter.scene.Player;
 import org.rspeer.runetek.api.Game;
@@ -13,55 +12,42 @@ import org.rspeer.script.Script;
 import org.rspeer.script.ScriptMeta;
 import org.rspeer.ui.Log;
 
-import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static Utility.BankHandling.*;
 import static Utility.InterfaceHandling.*;
 
 @ScriptMeta(developer = "Martin", desc = "Mule Trader", name = "Mule Trader")
-public class Muletrader extends Script {
+public abstract class MuleHandling extends Script {
 
 
-    private final String PLAYER_TRADING_TO = "psychoalfa9";
-    private final String TRADE_TEXT = "Waiting for other player...";
-    boolean shouldTrade;
-    boolean secondScreenWasVisible;
-    boolean bankIsEmpty;
+    private static final String PLAYER_TRADING_TO = "psychoalfa9";
+    private static final String TRADE_TEXT = "Waiting for other player...";
+    static boolean shouldTrade = false;
+    static boolean secondScreenWasVisible = false;
+    static boolean bankIsEmpty = false;
 
 
-    @Override
-    public void onStart() {
-        shouldTrade = false;
-        secondScreenWasVisible = false;
-        bankIsEmpty = false;
-
-        super.onStart();
+    private static void offerEntireInventory(){
+        for(Item i : Inventory.getItems()){
+            Trade.offerAll(i.getName());
+            Time.sleep(ThreadLocalRandom.current().nextInt(65,125));
+        }
+        Trade.offerAll(item -> Inventory.contains(item.getName()));
     }
 
-    public void offerInventory(){
-        Arrays.stream(Inventory.getItems()).forEach(this::offerItem);
-    }
-
-    public void offerItem(Item i){
-        Log.info("Trying to offer everything");
-        Trade.offerAll(i.getId());
-        Time.sleep(RandomHandling.randomNumber(55,111));
-    }
-
-    public boolean canFindPersonToMuleTo(){
+    private static boolean canFindPersonToMuleTo(){
         return playerToTrade()!=null;
     }
 
-    public Player playerToTrade(){
+    private static Player playerToTrade(){
         return Players.getNearest(player -> player.getName().equals(PLAYER_TRADING_TO));
     }
 
-    public void tradePlayer(){
+    private static void tradePlayer(){
         if(Trade.isOpen()){
-            Log.info("Inventory is open");
             if(!Inventory.isEmpty()){
-                offerInventory();
+                offerEntireInventory();
             }
             else if(Inventory.isEmpty()){
                 if(secondTradeWindow()!=null){
@@ -72,18 +58,18 @@ public class Muletrader extends Script {
                 }
                 else if(firstTradeWindow()!=null){
                     if(!TRADE_TEXT.equals(firstTradeWindow().getText())){
-                            Trade.accept();
+                        Trade.accept();
                     }
                 }
             }
         }
         else{
             playerToTrade().interact("Trade with");
-            Time.sleep(RandomHandling.randomNumber(1500,3800));
+            Time.sleep(RandomHandling.randomNumber(1500,14523));
         }
     }
 
-    public void withdrawEverythingNoted(){
+    private static void withdrawEverythingNoted(){
         //Assume bank is open
         if(walkToBankAndOpen()) {
             if (!notedMode()) {
@@ -108,10 +94,8 @@ public class Muletrader extends Script {
     }
 
 
-    @Override
-    public int loop() {
-        //IF not at bank walk to bank()
-        if(BankLocation.EDGEVILLE.getPosition().compareTo(Players.getLocal().getPosition())<=10){
+    public static int startMuling(BankLocation location) {
+        if(location.getPosition().compareTo(Players.getLocal().getPosition())<=10){
 
             if(secondScreenWasVisible && shouldTrade && !bankIsEmpty && secondTradeWindow()==null){
                 shouldTrade = false;
@@ -126,24 +110,23 @@ public class Muletrader extends Script {
             }
 
             else if(shouldTrade){
-               Log.info("Should Trade other player");
-               if(canFindPersonToMuleTo()){
-                   Log.info("Can find player to trade to");
-                   tradePlayer();
-               }
-            }
-            else{
-               Log.info("Should withdraw items from bank");
-               withdrawEverythingNoted();
+                Log.info("Should Trade other player");
+                if(canFindPersonToMuleTo()){
+                    Log.info("Can find player to trade to");
+                    tradePlayer();
                 }
             }
-
+            else{
+                Log.info("Should withdraw items from bank");
+                withdrawEverythingNoted();
+            }
+        }
         else {
             if(AreaHandling.shouldCrossDitch()){
                 AreaHandling.crossDitchToBank();
             }
             else{
-                Movement.walkTo(BankLocation.EDGEVILLE.getPosition());
+                Movement.walkTo(location.getPosition());
             }
         }
         return RandomHandling.randomNumber(350,600);

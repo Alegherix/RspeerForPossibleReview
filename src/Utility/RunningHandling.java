@@ -20,9 +20,9 @@ public abstract class RunningHandling extends Script {
     public static final int msPerSquareWalking = 805;
 
 
-    public static double depletionRatePerSquare(){
+    public static double depletionRatePerSquare() {
         double a = Math.min(Game.getClient().getWeight(), 64);
-        return ((a / 100)+ 0.64) / 2;
+        return ((a / 100) + 0.64) / 2;
     }
 
     public static int nSquaresWeCanRunTo(){
