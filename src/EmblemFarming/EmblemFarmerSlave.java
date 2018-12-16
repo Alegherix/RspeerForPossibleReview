@@ -8,6 +8,7 @@ import static Utility.InterfaceHandling.targetInterface;
 import Utility.InterfaceHandling;
 import Utility.RandomHandling;
 import org.rspeer.runetek.adapter.scene.Player;
+import org.rspeer.runetek.api.commons.Time;
 import org.rspeer.runetek.api.component.Bank;
 import org.rspeer.runetek.api.component.Trade;
 import org.rspeer.runetek.api.component.tab.Inventory;
@@ -15,11 +16,14 @@ import org.rspeer.runetek.api.scene.Players;
 import org.rspeer.runetek.event.listeners.ChatMessageListener;
 import org.rspeer.runetek.event.types.ChatMessageEvent;
 import org.rspeer.runetek.event.types.ChatMessageType;
+import org.rspeer.script.ScriptMeta;
 import org.rspeer.ui.Log;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 
+@ScriptMeta(developer = "Slazter", desc = "Emblem slave", name = "Emblem Slave")
 public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListener {
 
 
@@ -31,27 +35,29 @@ public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListen
 
     @Override
     public void onStart() {
+        super.onStart();
         tradePending = false;
         master = "";
         haveDied=false;
-        masters = RandomHandling.masters();
+        masters = Arrays.asList("psychoalfa9","Anotherone");
     }
 
     @Override
     public int loop() {
-        if(playerInLumbridge()){
-            if(!Inventory.contains(gloryPred)){
-                withdrawGlory();
-            }
-            else if(Inventory.contains(gloryPred)){
-                if(Bank.isOpen()){
-                    Bank.close();
-                }
-                else{
-                    teleportToEdgeville();
+        if(playerInLumbridge()) {
+            if (BankHandling.walkToBankAndOpen()) {
+                if (!Inventory.contains(gloryPred)) {
+                    withdrawGlory();
+                } else if (Inventory.contains(gloryPred)) {
+                    if (Bank.isOpen()) {
+                        Bank.close();
+                    } else {
+                        teleportToEdgeville();
+                    }
                 }
             }
         }
+
         else if(shouldUnequipGlory()){
             unEquipGlory();
         }
@@ -136,6 +142,7 @@ public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListen
         if(BankHandling.walkToBankAndOpen()){
             if(!Inventory.contains(gloryPred)){
                 Bank.withdraw(gloryPred, 1);
+                Time.sleep(RandomHandling.randomNumber(580,650));
             }
         }
     }

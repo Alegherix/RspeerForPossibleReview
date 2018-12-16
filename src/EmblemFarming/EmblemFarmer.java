@@ -31,19 +31,25 @@ public abstract class EmblemFarmer extends Script {
     List<String> playersToKill;
     private final int WORLD = 318;
     private Area lumbridge;
+    private Area lumbridgeLvl1;
+    private Area lumbridgeLvl2;
     protected static Area WILDY_LOOT_AREA;
     protected final int MAX_Y = 3524;
 
 
     @Override
     public void onStart() {
-        lumbridge = Area.rectangular(3226, 3205, 3202, 3230);
+        lumbridge = Area.rectangular(3226, 3205, 3202, 3230,0);
+        lumbridgeLvl1 = Area.rectangular(3226, 3205, 3202, 3230,1);
+        lumbridgeLvl2 = Area.rectangular(3226, 3205, 3202, 3230,2);
         WILDY_LOOT_AREA = AreaHandling.initiateWildernessArea();
 
     }
 
     public boolean playerInLumbridge(){
-        return lumbridge.contains(Players.getLocal().getPosition());
+        return lumbridge.contains(Players.getLocal().getPosition()) ||
+                lumbridgeLvl1.contains(Players.getLocal().getPosition()) ||
+                lumbridgeLvl2.contains(Players.getLocal().getPosition());
     }
 
 
