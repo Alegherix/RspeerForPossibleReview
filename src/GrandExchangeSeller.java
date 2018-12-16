@@ -28,7 +28,7 @@ import static Utility.BankHandling.walkToBankAndOpen;
 import static Utility.InterfaceHandling.*;
 
 
-@ScriptMeta(developer = "Martin", desc = "Grand Exchange Seller", name = "Grand Exchange Seller")
+//@ScriptMeta(developer = "Martin", desc = "Grand Exchange Seller", name = "Grand Exchange Seller")
 public class GrandExchangeSeller extends Script {
     private boolean shouldSell;
     private boolean bankIsEmpty;

@@ -1,6 +1,7 @@
 package EmblemFarming;
 
 import Utility.AreaHandling;
+import Utility.InterfaceHandling;
 import Utility.RandomHandling;
 import Utility.WorldHandling;
 import org.rspeer.runetek.adapter.component.InterfaceComponent;
@@ -19,7 +20,7 @@ import org.rspeer.ui.Log;
 
 import static Utility.RandomHandling.*;
 import static Utility.RunningHandling.enableRun;
-import static Utility.InterfaceHandling.gloryInterface;
+import static Utility.InterfaceHandling.*;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -47,13 +48,11 @@ public abstract class EmblemFarmer extends Script {
 
 
     protected void skipTarget() {
-
+        Log.info("Skipping target");
+        InterfaceHandling.abandonTarget();
     }
 
 
-    protected boolean shouldSkipTarget() {
-        return true;
-    }
 
     public void teleportToEdgeville(){
         if(!Players.getLocal().isAnimating()){
@@ -64,10 +63,6 @@ public abstract class EmblemFarmer extends Script {
 
     public boolean shouldSwitchGlory(){
         return !gloryInterface().containsAction("Edgeville");
-    }
-
-    public void switchGlory(){
-        //
     }
 
     boolean playerInLootArea(){

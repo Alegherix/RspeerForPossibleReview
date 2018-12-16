@@ -4,7 +4,8 @@ import org.rspeer.runetek.adapter.scene.Player;
 import org.rspeer.runetek.api.component.tab.Inventory;
 import org.rspeer.runetek.api.scene.Players;
 
-import static Utility.RandomHandling.charactersToKill;
+import static Utility.RandomHandling.characterList;
+import static Utility.RandomHandling.slaves;
 
 public class EmblemFarmerMaster extends EmblemFarmer {
 
@@ -14,8 +15,7 @@ public class EmblemFarmerMaster extends EmblemFarmer {
     @Override
     public void onStart() {
         super.onStart();
-
-        playersToKill = charactersToKill();
+        playersToKill = slaves();
         haveTarget = false;
 
     }
@@ -24,9 +24,6 @@ public class EmblemFarmerMaster extends EmblemFarmer {
     public int loop() {
         if(playerInLumbridge()){
             teleportToEdgeville();
-        }
-        else if(shouldSwitchGlory()){
-            switchGlory();
         }
         else if(!playerInLootArea()){
             walkToLootArea();

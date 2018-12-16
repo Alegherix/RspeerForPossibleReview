@@ -146,7 +146,10 @@ public abstract class BankHandling extends Script {
             }
             else {
                 Log.info("Bank is open");
-                if(Inventory.getFreeSlots() > amount && !Combat.isPoisoned()){
+                if(Inventory.contains(item -> item.getName().contains("Mysterious"))){
+                    Bank.depositInventory();
+                }
+                else if(Inventory.getFreeSlots() > amount && !Combat.isPoisoned()){
                     Log.info("Withdrawing item from Predicate");
                     if(!Inventory.contains(itemPredicate)){
                         Log.info("We don't have energy potion in Inventory");

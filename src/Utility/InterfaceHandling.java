@@ -30,4 +30,15 @@ public abstract class InterfaceHandling extends Script {
     public static InterfaceComponent targetInterface(){
         return Interfaces.getComponent(90,47);
     }
+
+    public static void abandonTarget(){
+        if(Dialog.isOpen()){
+            Dialog.process(0);
+            RandomHandling.randomReturn();
+        }
+        else{
+            Interfaces.getComponent(90,50).interact("Abandon target");
+            Time.sleep(RandomHandling.randomNumber(350,450));
+        }
+    }
 }

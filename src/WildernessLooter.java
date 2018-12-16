@@ -47,6 +47,7 @@ public class WildernessLooter extends Script {
 
     private Predicate<Item> energyPredicate;
     private Predicate<Pickable> generalLootPredicate;
+    private Predicate<Item> emblemPred;
     private static Area WILDY_LOOT_AREA;
     private boolean haveDied;
     private static Area lumbridge;
@@ -69,6 +70,7 @@ public class WildernessLooter extends Script {
         haveDied=false;
 
         //Initiate Predicates
+        emblemPred = emblem -> emblem.getName().startsWith("Mysterious");
         energyPredicate = item -> item.getName().startsWith("Energy");
         generalLootPredicate = loot ->
                 loot.getPosition().getY()>=3522 && loot.getPosition().getY()<=3563 &&
@@ -90,9 +92,10 @@ public class WildernessLooter extends Script {
         else if(Game.isLoggedIn()){
             if(lumbridge.contains(Players.getLocal().getPosition()) || haveDied){
                 haveDied=true;
-                enableRun();
-
-                if(isDeathInList()){
+                if(RunningHandling.shouldRun()){
+                    RunningHandling.enableRun();
+                }
+                else if(isDeathInList()){
                     dyingSpotsList.clear();
                 }
                 else if(Players.getLocal().getPosition().getY()>=3487){
@@ -137,9 +140,6 @@ public class WildernessLooter extends Script {
                     if(!Players.getLocal().isMoving()){
                         emblemExist().interact("Take");
                     }
-                }
-                else if(shouldWaitOutAttacker()){
-                    abandonAttacker();
                 }
                 else if(isUnderAttack()){
                     if(CombatHandling.canAndShouldEat(50)){
@@ -201,7 +201,7 @@ public class WildernessLooter extends Script {
                     }
                     if(isDeathInList()){
                         updateTimer(returnTime);
-                        if(!standingAtDeathPosition() && haveTarget()){
+                        if(!standingAtDeathPosition() && haveTarget() || (standingAtDeathPosition() && dyingSpotsList.getFirst().getDeathTime()>2500 && haveTarget())){
                             abandonTarget();
                         }
                         clearMissedDeathPositions();
@@ -280,15 +280,18 @@ public class WildernessLooter extends Script {
         int sleepTime = ThreadLocalRandom.current().nextInt(6500,8800);
         Log.info("Trying to sleep for " + sleepTime+ "ms");
         Time.sleep(sleepTime);
+        if(shouldWaitOutAttacker()){
+            Log.info("Should wait out attacker");
+            abandonAttacker();
+        }
     }
 
 
 
     public boolean shouldBank(){
         return Inventory.getItems().length >27 || Combat.isPoisoned() ||
-                Bank.isOpen() && Bank.contains(energyPredicate) && !Inventory.contains(energyPredicate) ||
-                ((Players.getLocal().getHealthPercent()<=90 || Players.getLocal().isHealthBarVisible())
-                        && Inventory.contains(item -> item.getName().contains("Emblem")));
+                (Bank.isOpen() && Bank.contains(energyPredicate) && !Inventory.contains(energyPredicate)) ||
+                Inventory.getCount(emblemPred)>1;
     }
 
 
@@ -319,12 +322,18 @@ public class WildernessLooter extends Script {
 
     public boolean shouldWaitOutAttacker(){
         InterfaceComponent attacker = Interfaces.getComponent(90,47);
-        return Players.getLocal().getY() < 3524 && attacker!= null && Players.getNearest(player -> player.getName().equals(attacker.getText()))!=null;
+        if(attacker!=null){
+            String nameOfAttacker = attacker.getText();
+            return Players.getLocal().getY() <=3524 && Players.getNearest(nameOfAttacker)!=null;
+        }
+        return false;
     }
 
     public void abandonAttacker(){
+        Log.info("Sleeping then abandoning attacker");
+        Time.sleep(RandomHandling.randomNumber(15000,18000));
         abandonTarget();
-        Time.sleep(RandomHandling.randomNumber(3500,6500));
+
     }
 
     public static Player getDyingPlayer(){
@@ -357,7 +366,7 @@ public class WildernessLooter extends Script {
     }
 
     public Pickable emblemExist(){
-        return Pickables.getNearest(item -> item.getName().contains("Emblem"));
+        return Pickables.getNearest(item -> item.getName().contains("emblem"));
     }
 
     public static boolean bonesAtDeathSpot(){
