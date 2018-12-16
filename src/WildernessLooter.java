@@ -133,7 +133,15 @@ public class WildernessLooter extends Script {
                 }
             }
             else if(playerInLootArea()){
-                if(isUnderAttack()){
+                if(emblemExist()!=null){
+                    if(!Players.getLocal().isMoving()){
+                        emblemExist().interact("Take");
+                    }
+                }
+                else if(shouldWaitOutAttacker()){
+                    abandonAttacker();
+                }
+                else if(isUnderAttack()){
                     if(CombatHandling.canAndShouldEat(50)){
                         CombatHandling.eatFood();
                     }
@@ -242,7 +250,6 @@ public class WildernessLooter extends Script {
     }
 
 
-
     public static long firstDeathTime(){
         return dyingSpotsList.getFirst().getDeathTime();
     }
@@ -278,9 +285,10 @@ public class WildernessLooter extends Script {
 
 
     public boolean shouldBank(){
-        //boolean keepOpen = Bank.isOpen() && Bank.contains(energyPredicate) && !Inventory.contains(energyPredicate);
         return Inventory.getItems().length >27 || Combat.isPoisoned() ||
-                Bank.isOpen() && Bank.contains(energyPredicate) && !Inventory.contains(energyPredicate);
+                Bank.isOpen() && Bank.contains(energyPredicate) && !Inventory.contains(energyPredicate) ||
+                ((Players.getLocal().getHealthPercent()<=90 || Players.getLocal().isHealthBarVisible())
+                        && Inventory.contains(item -> item.getName().contains("Emblem")));
     }
 
 
@@ -309,6 +317,15 @@ public class WildernessLooter extends Script {
         }
     }
 
+    public boolean shouldWaitOutAttacker(){
+        InterfaceComponent attacker = Interfaces.getComponent(90,47);
+        return Players.getLocal().getY() < 3524 && attacker!= null && Players.getNearest(player -> player.getName().equals(attacker.getText()))!=null;
+    }
+
+    public void abandonAttacker(){
+        abandonTarget();
+        Time.sleep(RandomHandling.randomNumber(3500,6500));
+    }
 
     public static Player getDyingPlayer(){
         //Used for finding dying players
@@ -337,6 +354,10 @@ public class WildernessLooter extends Script {
             long deathtime = d.getDeathTime();
             d.setDeathTime(deathtime - reduction);
         }
+    }
+
+    public Pickable emblemExist(){
+        return Pickables.getNearest(item -> item.getName().contains("Emblem"));
     }
 
     public static boolean bonesAtDeathSpot(){

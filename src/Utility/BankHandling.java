@@ -3,6 +3,7 @@ package Utility;
 import org.rspeer.runetek.adapter.component.Item;
 import org.rspeer.runetek.api.commons.BankLocation;
 import org.rspeer.runetek.api.commons.Time;
+import org.rspeer.runetek.api.commons.math.Random;
 import org.rspeer.runetek.api.component.Bank;
 import org.rspeer.runetek.api.component.tab.Combat;
 import org.rspeer.runetek.api.component.tab.Inventory;
@@ -50,6 +51,7 @@ public abstract class BankHandling extends Script {
             }
         }
     }
+
 
     public static boolean walkToBankAndOpen(){
         if(!canSeeBank()){
@@ -109,7 +111,8 @@ public abstract class BankHandling extends Script {
         if(!canSeeBank()){
             Log.info("Can't se bank so walking towards it");
             walkToNearestBank();
-        }else if(canSeeBank()){
+        }
+        else if(canSeeBank()){
             Log.info("Can se the bank, therefore trying to open it");
             depositAll();
         }

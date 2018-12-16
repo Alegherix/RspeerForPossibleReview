@@ -1,4 +1,5 @@
 import Utility.AreaHandling;
+import Utility.BankHandling;
 import Utility.RandomHandling;
 import org.rspeer.runetek.adapter.component.Item;
 import org.rspeer.runetek.adapter.scene.Player;
@@ -28,6 +29,7 @@ public class Muletrader extends Script {
     boolean shouldTrade;
     boolean secondScreenWasVisible;
     boolean bankIsEmpty;
+    private boolean haveBankedOnce;
 
 
     @Override
@@ -35,6 +37,8 @@ public class Muletrader extends Script {
         shouldTrade = false;
         secondScreenWasVisible = false;
         bankIsEmpty = false;
+        haveBankedOnce = false;
+
 
         super.onStart();
     }
@@ -107,6 +111,10 @@ public class Muletrader extends Script {
         }
     }
 
+    public boolean hasNotedItems(){
+        return Arrays.stream(Inventory.getItems()).anyMatch(Item::isNoted);
+    }
+
 
     @Override
     public int loop() {
@@ -132,6 +140,7 @@ public class Muletrader extends Script {
                    tradePlayer();
                }
             }
+
             else{
                Log.info("Should withdraw items from bank");
                withdrawEverythingNoted();

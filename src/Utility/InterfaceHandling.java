@@ -22,4 +22,12 @@ public abstract class InterfaceHandling extends Script {
     public static final InterfaceComponent PUT_UP_ALL_GE(){
         return Interfaces.getComponent(465,24,48);
     }
+
+    public static InterfaceComponent gloryInterface(){
+        return Interfaces.getComponent(387,8);
+    }
+
+    public static InterfaceComponent targetInterface(){
+        return Interfaces.getComponent(90,47);
+    }
 }

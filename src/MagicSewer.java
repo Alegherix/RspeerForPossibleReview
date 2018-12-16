@@ -60,7 +60,7 @@ public class MagicSewer extends Script {
             }
             else{
                 if(currentlyAttackingNpc!=null){
-                    if(currentlyAttackingNpc.getHealthPercent()==0 || !currentlyAttackingNpc.isHealthBarVisible()){
+                    if(currentlyAttackingNpc.getHealthPercent()<2 || !currentlyAttackingNpc.isHealthBarVisible()){
                         currentlyAttackingNpc=null;
                     }
                 }
