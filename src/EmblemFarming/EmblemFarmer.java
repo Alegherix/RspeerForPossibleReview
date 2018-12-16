@@ -10,6 +10,7 @@ import org.rspeer.runetek.adapter.scene.SceneObject;
 import org.rspeer.runetek.api.Game;
 import org.rspeer.runetek.api.commons.Time;
 import org.rspeer.runetek.api.component.Interfaces;
+import org.rspeer.runetek.api.component.tab.Inventory;
 import org.rspeer.runetek.api.movement.Movement;
 import org.rspeer.runetek.api.movement.position.Area;
 import org.rspeer.runetek.api.movement.position.Position;
@@ -28,6 +29,7 @@ import java.util.function.Predicate;
 public abstract class EmblemFarmer extends Script {
 
     protected final Predicate<Item> gloryPred = item -> item.getName().matches("Amulet of glory\\([1-6]\\)");
+    protected final Predicate<Item> generalGloryPred = item -> item.getName().contains("glory");
     List<String> playersToKill;
     private final int WORLD = 318;
     private Area lumbridge;
@@ -61,8 +63,12 @@ public abstract class EmblemFarmer extends Script {
 
 
     public void teleportToEdgeville(){
-        if(!Players.getLocal().isAnimating()){
-            gloryInterface().interact("Edgeville");
+        if(edgevilleTeleportOption() != null){
+            edgevilleTeleportOption().click();
+            RandomHandling.randomReturn();
+        }
+        else if(!Players.getLocal().isAnimating()){
+            Inventory.getFirst(item -> item.getName().contains("glory")).interact("Rub");
             Time.sleep(RandomHandling.randomNumber(350,450));
         }
     }

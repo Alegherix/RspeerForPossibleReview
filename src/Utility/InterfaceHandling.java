@@ -27,6 +27,10 @@ public abstract class InterfaceHandling extends Script {
         return Interfaces.getComponent(387,8);
     }
 
+    public static InterfaceComponent edgevilleTeleportOption(){
+        return Interfaces.getComponent(219,1,1);
+    }
+
     public static InterfaceComponent targetInterface(){
         return Interfaces.getComponent(90,47);
     }

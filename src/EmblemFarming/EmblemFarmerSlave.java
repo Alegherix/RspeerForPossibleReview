@@ -45,22 +45,21 @@ public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListen
     @Override
     public int loop() {
         if(playerInLumbridge()) {
-            if (BankHandling.walkToBankAndOpen()) {
+            if(Inventory.contains(gloryPred)){
+                if(Bank.isOpen()){
+                    Bank.close();
+                }
+                else{
+                    teleportToEdgeville();
+                }
+            }
+            else if (BankHandling.walkToBankAndOpen()) {
                 if (!Inventory.contains(gloryPred)) {
                     withdrawGlory();
-                } else if (Inventory.contains(gloryPred)) {
-                    if (Bank.isOpen()) {
-                        Bank.close();
-                    } else {
-                        teleportToEdgeville();
-                    }
                 }
             }
         }
 
-        else if(shouldUnequipGlory()){
-            unEquipGlory();
-        }
         else if(shouldBankGlory()){
             bankGlory();
         }
@@ -70,13 +69,17 @@ public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListen
         else if(!inventoryContainsEmblem()){
             acceptEmblem();
         }
+        // Allt fungerar fram hit minst
         else if(shouldWalkOut()){
+            Log.info("Should walk out");
             walkOut();
         }
         else if(shouldSkipTarget()){
+            Log.info("Should Skip target");
             skipTarget();
         }
         else if(getMaster()!=null && master==null){
+            Log.info("Setting Master");
                 setMaster();
         }
         else if(shouldInitiateAttack()){
@@ -114,12 +117,7 @@ public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListen
     }
 
 
-    public void bankGlory(){
-        Log.info("Banking Glory");
-        if(BankHandling.walkToBankAndOpen()){
-            Bank.deposit(gloryPred,1);
-        }
-    }
+
 
     public void acceptEmblem(){
         Log.info("Waiting for Emblem");
@@ -147,23 +145,21 @@ public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListen
         }
     }
 
-    boolean shouldUnequipGlory(){
-        Log.info("Should Unequip Glory");
-        return Players.getLocal().getY()>3483 && gloryInterface()!=null && gloryInterface().getActions().length > 0;
-    }
-
-    public void unEquipGlory(){
-        Log.info("Unequping Glory");
-        gloryInterface().interact("Remove");
-    }
 
     boolean shouldBankGlory(){
-        Log.info("Should Bank glory");
-        return Players.getLocal().getY()>3483 && Inventory.contains(item -> item.getName().contains("glory"));
+        return Players.getLocal().getY()>3483 && Inventory.contains(generalGloryPred);
+    }
+
+    public void bankGlory(){
+        Log.info("Banking Glory");
+        if(BankHandling.walkToBankAndOpen()){
+            Bank.deposit(generalGloryPred,1);
+            RandomHandling.randomReturn();
+        }
     }
 
     public boolean inventoryContainsEmblem(){
-        return Inventory.contains(item -> item.getName().contains("Emblem"));
+        return Inventory.contains(item -> item.getName().contains("emblem"));
     }
 
     boolean shouldWalkOut(){
