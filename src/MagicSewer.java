@@ -30,6 +30,7 @@ public class MagicSewer extends Script {
     private final String ZOMBIE = "Zombie";
     private final Position CASTINGPOSITION = new Position(3229,9900);
     private final Area CASTINGAREA = Area.rectangular(3228, 9898, 3231, 9901);
+    private final Position BEST_POSITION = new Position(3229,9900);
     private Npc currentlyAttackingNpc;
 
     @Override
@@ -42,6 +43,9 @@ public class MagicSewer extends Script {
     public int loop() {
         if(shouldWalkToCastingArea()){
             castingAreaWalking();
+        }
+        else if(!standingAtBestSpot()){
+            walkToBestSpot();
         }
         else if(canAttackZombies()){
             if(haveLeveledUp()!=null){
@@ -68,6 +72,13 @@ public class MagicSewer extends Script {
         return RandomHandling.randomNumber(601,715);
     }
 
+    private void walkToBestSpot() {
+        Movement.walkTo(BEST_POSITION);
+    }
+
+    private boolean standingAtBestSpot() {
+        return !Players.getLocal().getPosition().equals(BEST_POSITION);
+    }
 
 
     public InterfaceComponent haveLeveledUp(){
