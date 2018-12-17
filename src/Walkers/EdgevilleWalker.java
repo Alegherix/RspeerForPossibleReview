@@ -1,5 +1,8 @@
 package Walkers;
 
+import Utility.RandomHandling;
+import Utility.RunningHandling;
+import org.rspeer.runetek.api.commons.BankLocation;
 import org.rspeer.runetek.api.commons.math.Random;
 import org.rspeer.runetek.api.component.Bank;
 import org.rspeer.runetek.api.component.tab.Inventory;
@@ -10,19 +13,13 @@ import org.rspeer.script.ScriptMeta;
 
 import java.util.Arrays;
 
-@ScriptMeta(developer = "Slazter", desc = "Edge Walkers.EdgevilleWalker", name = "Walks to Edgeville Bank")
+@ScriptMeta(developer = "Slazter", desc = "Edge Walkers.EdgevilleWalker", name = "Edgeville Walker")
 public class EdgevilleWalker extends Script {
-
-
 
     @Override
     public int loop() {
-        Movement.walkTo(new Position(3094,3491));
-        return Random.mid(250,400);
+        RunningHandling.smartWalking(BankLocation.EDGEVILLE.getPosition());
+        return RandomHandling.randomReturn();
     }
 
-
-    public void dropAll(){
-        Arrays.stream(Inventory.getItems()).forEach(item -> item.interact("Drop"));
-    }
 }

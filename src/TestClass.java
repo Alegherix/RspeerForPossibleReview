@@ -1,27 +1,24 @@
-import Utility.InterfaceHandling;
-import Utility.LootHandling;
-import org.rspeer.runetek.adapter.component.Item;
+import Utility.MagicHandling;
+import Utility.RandomHandling;
+import Utility.RunningHandling;
+import org.rspeer.runetek.api.commons.BankLocation;
 import org.rspeer.runetek.api.commons.math.Random;
-import org.rspeer.runetek.api.component.Interfaces;
+import org.rspeer.runetek.api.movement.Movement;
+import org.rspeer.runetek.api.movement.position.Position;
+import org.rspeer.runetek.api.scene.Players;
 import org.rspeer.script.Script;
 import org.rspeer.script.ScriptMeta;
 import org.rspeer.ui.Log;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 
 @ScriptMeta(developer = "Slazter", desc = "TestClass", name = "For various testing purposes")
 public class TestClass extends Script {
 
+
+    private double targetDistance;
+    private double currentDistance;
+    private boolean nextClickSet;
+    private int nextClick;
 
     @Override
     public void onStart() {
@@ -31,15 +28,16 @@ public class TestClass extends Script {
 
     @Override
     public int loop() {
-        InterfaceHandling.gloryInterface().interact("Edgeville");
-        return 2500;
+        if(MagicHandling.shouldSetupAutoCast()){
+            MagicHandling.enableFireStrike();
+        }
+        return RandomHandling.randomReturn();
     }
 
 
     public static void main(String[] args) throws Exception {
 
-        System.out.println(Random.mid(200,500));
-        ThreadLocalRandom.current().nextInt(200,500);
+
     }
 
 

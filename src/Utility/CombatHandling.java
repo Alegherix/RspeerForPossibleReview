@@ -62,6 +62,6 @@ public abstract class CombatHandling extends Script {
 
     public static void eatFood(){
         Inventory.getFirst(item -> item.containsAction("Eat")).interact("Eat");
-        Time.sleep(RandomHandling.randomReturn(580,650));
+        RandomHandling.randomSleep(550,640);
     }
 }

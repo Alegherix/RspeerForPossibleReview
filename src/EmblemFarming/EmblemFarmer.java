@@ -1,14 +1,13 @@
 package EmblemFarming;
 
-import Utility.AreaHandling;
-import Utility.InterfaceHandling;
-import Utility.RandomHandling;
-import Utility.WorldHandling;
+import Utility.*;
 import org.rspeer.runetek.adapter.component.InterfaceComponent;
 import org.rspeer.runetek.adapter.component.Item;
+import org.rspeer.runetek.adapter.scene.Player;
 import org.rspeer.runetek.adapter.scene.SceneObject;
 import org.rspeer.runetek.api.Game;
 import org.rspeer.runetek.api.commons.Time;
+import org.rspeer.runetek.api.component.Bank;
 import org.rspeer.runetek.api.component.Interfaces;
 import org.rspeer.runetek.api.component.tab.Inventory;
 import org.rspeer.runetek.api.movement.Movement;
@@ -30,13 +29,13 @@ public abstract class EmblemFarmer extends Script {
 
     protected final Predicate<Item> gloryPred = item -> item.getName().matches("Amulet of glory\\([1-6]\\)");
     protected final Predicate<Item> generalGloryPred = item -> item.getName().contains("glory");
-    List<String> playersToKill;
-    private final int WORLD = 318;
+    protected final String LOWEST_TIER_EMBLEM = "Mysterious emblem";
     private Area lumbridge;
     private Area lumbridgeLvl1;
     private Area lumbridgeLvl2;
     protected static Area WILDY_LOOT_AREA;
     protected final int MAX_Y = 3524;
+    protected Player target;
 
 
     @Override
@@ -45,6 +44,7 @@ public abstract class EmblemFarmer extends Script {
         lumbridgeLvl1 = Area.rectangular(3226, 3205, 3202, 3230,1);
         lumbridgeLvl2 = Area.rectangular(3226, 3205, 3202, 3230,2);
         WILDY_LOOT_AREA = AreaHandling.initiateWildernessArea();
+        target = null;
 
     }
 
@@ -54,6 +54,21 @@ public abstract class EmblemFarmer extends Script {
                 lumbridgeLvl2.contains(Players.getLocal().getPosition());
     }
 
+    public void lumbridgeTeleportHandling(){
+        if(Inventory.contains(gloryPred)){
+            if(Bank.isOpen()){
+                Bank.close();
+            }
+            else{
+                teleportToEdgeville();
+            }
+        }
+        else if (BankHandling.walkToBankAndOpen()) {
+            if (!Inventory.contains(gloryPred)) {
+                withdrawGlory();
+            }
+        }
+    }
 
     protected void skipTarget() {
         Log.info("Skipping target");
@@ -61,28 +76,41 @@ public abstract class EmblemFarmer extends Script {
     }
 
 
+    protected void withdrawGlory(){
+        if(BankHandling.walkToBankAndOpen()){
+            if(!Inventory.contains(gloryPred)){
+                Bank.withdraw(gloryPred, 1);
+                randomSleep(580,650);
+            }
+        }
+    }
+
+    boolean shouldSkipTarget(List<String> list) {
+        return !list.contains(targetInterface().getText());
+    }
 
     public void teleportToEdgeville(){
         if(edgevilleTeleportOption() != null){
             edgevilleTeleportOption().click();
-            RandomHandling.randomReturn();
         }
         else if(!Players.getLocal().isAnimating()){
             Inventory.getFirst(item -> item.getName().contains("glory")).interact("Rub");
-            Time.sleep(RandomHandling.randomNumber(350,450));
         }
+        randomSleep();
     }
 
-    public boolean shouldSwitchGlory(){
-        return !gloryInterface().containsAction("Edgeville");
-    }
 
     boolean playerInLootArea(){
         return WILDY_LOOT_AREA.contains(Players.getLocal().getPosition());
     }
 
+    protected boolean shouldWalkOut(){
+        return Players.getLocal().getY()<=3524;
+    }
+
     protected void walkOut(){
         Movement.walkTo(new Position(Players.getLocal().getPosition().getX(), Players.getLocal().getY()+1));
+        RandomHandling.randomSleep();
     }
 
     public void walkToLootArea(){
@@ -106,4 +134,16 @@ public abstract class EmblemFarmer extends Script {
             }
         }
     }
+
+    protected boolean shouldFindTarget() {
+        //När det finns folk ifrån slave listan i närheten
+        return target == null;
+    }
+
+    public void attackTarget(){
+        if(Players.getLocal().getTargetIndex() == -1){
+            target.interact("Attack");
+        }
+    }
+
 }

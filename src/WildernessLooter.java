@@ -81,6 +81,15 @@ public class WildernessLooter extends Script {
         super.onStart();
     }
 
+
+    // TODO - Sätt WalkFlag Till destinationen istället
+    // TODO - Bättre Check på DeathPosition
+    // TODO - Teleportera med Glory
+    // TODO - Använd glory om den ej har de
+    // TODO - Smartare Walking
+    // TODO - Loota påväg till mitt mål
+
+
     @Override
     public int loop() {
         returnTime = ThreadLocalRandom.current().nextInt(200,455);
@@ -324,14 +333,14 @@ public class WildernessLooter extends Script {
         InterfaceComponent attacker = Interfaces.getComponent(90,47);
         if(attacker!=null){
             String nameOfAttacker = attacker.getText();
-            return Players.getLocal().getY() <=3524 && Players.getNearest(nameOfAttacker)!=null;
+            return Players.getLocal().getY() <=3524 && Players.getNearest(name -> name.getName().equals(nameOfAttacker))!=null;
         }
         return false;
     }
 
     public void abandonAttacker(){
         Log.info("Sleeping then abandoning attacker");
-        Time.sleep(RandomHandling.randomNumber(15000,18000));
+        Time.sleep(RandomHandling.randomNumber(21000,23000));
         abandonTarget();
 
     }
@@ -387,7 +396,8 @@ public class WildernessLooter extends Script {
     }
 
     public static void walkToDeathPos(){
-        Movement.walkTo(dyingSpotsList.getFirst().getDeathPosition());
+        //Uppdaterat och börjat använda setWalkFlag
+        Movement.setWalkFlag(dyingSpotsList.getFirst().getDeathPosition());
     }
 
     public static boolean standingAtDeathPosition(){
@@ -465,10 +475,11 @@ public class WildernessLooter extends Script {
     public static void abandonTarget(){
         if(Dialog.isOpen()){
             Dialog.process(0);
+            RandomHandling.randomSleep();
         }
         else{
             Interfaces.getComponent(90,50).interact("Abandon target");
-            Time.sleep(RandomHandling.randomNumber(350,450));
+            RandomHandling.randomSleep();
         }
     }
 }

@@ -20,6 +20,7 @@ import org.rspeer.script.ScriptMeta;
 import org.rspeer.ui.Log;
 
 import java.util.Arrays;
+import java.util.function.Predicate;
 
 @ScriptMeta(developer = "Slazter", desc = "Level account in Sewers", name = "Sewer Magics")
 public class MagicSewer extends Script {
@@ -40,13 +41,7 @@ public class MagicSewer extends Script {
     @Override
     public int loop() {
         if(shouldWalkToCastingArea()){
-            if(shouldFixAttackOptions()){
-                Log.info("Fixing Attack Option");
-                fixAttackOptions();
-            }
-            else{
-                castingAreaWalking();
-            }
+            castingAreaWalking();
         }
         else if(canAttackZombies()){
             if(haveLeveledUp()!=null){
@@ -165,7 +160,8 @@ public class MagicSewer extends Script {
     // Part that deals with Attacking Zombies
     public void attackZombie(){
 
-        if (Players.getLocal().getAnimation()==-1 && Players.getLocal().getAnimationFrame()==13){
+        if ((Players.getLocal().getAnimation()==-1 && Players.getLocal().getAnimationFrame()==13)
+            || (Players.getLocal().getAnimation()==-1 && Players.getLocal().getAnimationFrame()==11)){
             if(zombie()!=null){
                 currentlyAttackingNpc = zombie();
                 Log.info("Attacking");
@@ -205,11 +201,13 @@ public class MagicSewer extends Script {
     }
 
     public void walkToManhole(){
-       Movement.walkTo(SEWEROPENING);
+       RunningHandling.smartWalking(SEWEROPENING);
     }
 
     public SceneObject manhole(){
-        return SceneObjects.getNearest("Manhole");
+        Predicate<SceneObject> manhole = hole -> hole.distance(Players.getLocal().getPosition())<=5
+                && hole.getName().equals("Manhole");
+        return SceneObjects.getNearest(manhole);
     }
 
     public void openManhole(){
@@ -223,10 +221,7 @@ public class MagicSewer extends Script {
 
 
     public void castingAreaWalking(){
-        if(RunningHandling.shouldRun()){
-            RunningHandling.enableRun();
-        }
-        else if(isInSewers()){
+        if(isInSewers()){
             walkToCastingArea();
         }
         else{

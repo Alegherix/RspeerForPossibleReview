@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 
-@ScriptMeta(developer = "Slazter", desc = "Emblem slave", name = "Emblem Slave")
+@ScriptMeta(developer = "Slazter", desc = "Emblem slave", name = "Emblem SLAVE")
 public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListener {
 
 
@@ -45,26 +45,16 @@ public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListen
     @Override
     public int loop() {
         if(playerInLumbridge()) {
-            if(Inventory.contains(gloryPred)){
-                if(Bank.isOpen()){
-                    Bank.close();
-                }
-                else{
-                    teleportToEdgeville();
-                }
-            }
-            else if (BankHandling.walkToBankAndOpen()) {
-                if (!Inventory.contains(gloryPred)) {
-                    withdrawGlory();
-                }
-            }
+            lumbridgeTeleportHandling();
         }
-
         else if(shouldBankGlory()){
             bankGlory();
         }
         else if(!playerInLootArea()){
             walkToLootArea();
+        }
+        else if(shouldFindTarget()){
+            walkOut();
         }
         else if(!inventoryContainsEmblem()){
             acceptEmblem();
@@ -74,13 +64,9 @@ public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListen
             Log.info("Should walk out");
             walkOut();
         }
-        else if(shouldSkipTarget()){
+        else if(shouldSkipTarget(masters)){
             Log.info("Should Skip target");
             skipTarget();
-        }
-        else if(getMaster()!=null && master==null){
-            Log.info("Setting Master");
-                setMaster();
         }
         else if(shouldInitiateAttack()){
             initiateAttack();
@@ -90,32 +76,19 @@ public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListen
 
 
 
-
-     boolean shouldSkipTarget() {
-        return targetInterface()!= null && !masters.contains(targetInterface().getText());
-    }
-
     private void initiateAttack() {
         Log.info("Attacking");
-        Players.getNearest(master).interact("Attack");
+        if(Players.getLocal().getTargetIndex() == -1){{
+            Players.getNearest(master).interact("Attack");
+        }}
+
     }
 
     private boolean shouldInitiateAttack() {
         Log.info("Should initiate Attack");
         //Master har samma y som vi har, därför initia attack
-        return Players.getNearest(master).getY()>=Players.getLocal().getY();
+        return Players.getNearest(player -> player.getName().equals(master)).getY()>=Players.getLocal().getY();
     }
-
-    public void setMaster(){
-        Log.info("Master exist so setting it");
-        master = getMaster();
-    }
-
-    public String getMaster(){
-        Log.info("Trying to get master");
-        return masters.stream().filter(master -> master.equals(targetInterface().getText())).findFirst().orElse(null);
-    }
-
 
 
 
@@ -136,15 +109,6 @@ public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListen
     }
 
 
-    void withdrawGlory(){
-        if(BankHandling.walkToBankAndOpen()){
-            if(!Inventory.contains(gloryPred)){
-                Bank.withdraw(gloryPred, 1);
-                Time.sleep(RandomHandling.randomNumber(580,650));
-            }
-        }
-    }
-
 
     boolean shouldBankGlory(){
         return Players.getLocal().getY()>3483 && Inventory.contains(generalGloryPred);
@@ -154,7 +118,7 @@ public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListen
         Log.info("Banking Glory");
         if(BankHandling.walkToBankAndOpen()){
             Bank.deposit(generalGloryPred,1);
-            RandomHandling.randomReturn();
+            RandomHandling.randomSleep();
         }
     }
 
@@ -162,11 +126,12 @@ public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListen
         return Inventory.contains(item -> item.getName().contains("emblem"));
     }
 
+    /*
     boolean shouldWalkOut(){
         Log.info("Should walk out");
         return inventoryContainsEmblem() && Players.getLocal().getY() < MAX_Y;
     }
-
+    */
     @Override
     public void notify(ChatMessageEvent msg) {
         if (!Trade.isOpen()) {

@@ -35,14 +35,27 @@ public abstract class InterfaceHandling extends Script {
         return Interfaces.getComponent(90,47);
     }
 
+    public final static String targetName(){
+        return InterfaceHandling.targetInterface().getText();
+    }
+
+    public static InterfaceComponent combatSpellInterface(){
+        return Interfaces.getComponent(593,25);
+    }
+
+    public static InterfaceComponent autoCastInterface(){
+        return Interfaces.getComponent(201,1);
+    }
+
     public static void abandonTarget(){
         if(Dialog.isOpen()){
             Dialog.process(0);
-            RandomHandling.randomReturn();
+            RandomHandling.randomSleep();
         }
         else{
             Interfaces.getComponent(90,50).interact("Abandon target");
-            Time.sleep(RandomHandling.randomNumber(350,450));
+            RandomHandling.randomSleep();
         }
+
     }
 }

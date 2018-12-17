@@ -1,5 +1,6 @@
 package Utility;
 
+import org.rspeer.runetek.api.commons.Time;
 import org.rspeer.runetek.api.commons.math.Random;
 
 import java.io.BufferedReader;
@@ -43,8 +44,19 @@ public class RandomHandling {
         return Random.high(low,high);
     }
 
+    /**
+     * Returns a random intevall of 350-425
+     */
     public static int randomReturn(){
         return randomReturn(350,425);
+    }
+
+    public static void randomSleep(){
+        Time.sleep(randomReturn());
+    }
+
+    public static void randomSleep(int low, int high){
+        Time.sleep(randomReturn(low,high));
     }
 
     public static void main(String[] args) {
