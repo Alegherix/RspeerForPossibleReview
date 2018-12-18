@@ -26,12 +26,10 @@ import java.util.function.Predicate;
 @ScriptMeta(developer = "Slazter", desc = "Emblem slave", name = "Emblem SLAVE")
 public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListener {
 
-
     private String master;
     private boolean tradePending;
     boolean haveDied;
     private List<String> masters;
-    Predicate<Player> playerPredicate;
 
     @Override
     public void onStart() {
@@ -54,24 +52,16 @@ public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListen
             walkToLootArea();
         }
         else if(shouldFindTarget()){
-            walkOut();
+          findTarget(masters);
         }
         else if(!inventoryContainsEmblem()){
             acceptEmblem();
         }
         // Allt fungerar fram hit minst
-        else if(shouldWalkOut()){
-            Log.info("Should walk out");
-            walkOut();
-        }
-        else if(shouldSkipTarget(masters)){
-            Log.info("Should Skip target");
-            skipTarget();
-        }
         else if(shouldInitiateAttack()){
             initiateAttack();
         }
-        return RandomHandling.randomNumber(350,580);
+        return RandomHandling.randomReturn();
     }
 
 
@@ -87,7 +77,7 @@ public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListen
     private boolean shouldInitiateAttack() {
         Log.info("Should initiate Attack");
         //Master har samma y som vi har, därför initia attack
-        return Players.getNearest(player -> player.getName().equals(master)).getY()>=Players.getLocal().getY();
+        return Players.getNearest(master).getY()>=Players.getLocal().getY();
     }
 
 

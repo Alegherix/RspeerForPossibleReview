@@ -64,7 +64,7 @@ public abstract class LootHandling{
                 "Mysterious emblem", "Amulet of glory(1)", "Amulet of glory(2)", "Amulet of glory(3)", "Amulet of glory(4)", "Amulet of glory(5)", "Amulet of glory(6)",
                 "Mysterious emblem (tier 3)", "Mysterious emblem (tier 4)", "Mysterious emblem (tier 5)", "Mysterious emblem (tier 6)", "Mysterious emblem (tier 7)", "Mysterious emblem (tier 8)",
                 "Mysterious emblem (tier 9)", "Combat bracelet", "Combat bracelet(4)", "Combat bracelet(3)", "Combat bracelet(2)","Combat bracelet(1)", "Zamorak monk bottom", "Zamorak monk top",
-                "Amulet of power", "Phoenix necklace");
+                "Amulet of power", "Phoenix necklace", "Climbing boots");
     }
 
     public static List<String> lootsToSell(){

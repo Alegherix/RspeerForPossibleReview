@@ -149,8 +149,8 @@ public class WildernessLooter extends Script {
                             lootHaveSpawned = true;
                         }
 
-                        if(getLootUnderPlayer()!=null){
-                            getLootUnderPlayer().interact("Take");
+                        if(getLootUnderPlayer2()!=null){
+                            getLootUnderPlayer2().interact("Take");
                         }
 
                         else if(backupTime<=0 || (lootHaveSpawned)){
@@ -390,6 +390,18 @@ public class WildernessLooter extends Script {
         backupTime = System.currentTimeMillis();
         lootHaveSpawned = false;
         timerStarted=false;
+    }
+
+    public Pickable getLootUnderPlayer2(){
+        List<Pickable> listOfLoots = Arrays.asList(Pickables.getAt(Players.getLocal().getPosition()));
+        listOfLoots = listOfLoots.stream().filter(item -> loots.contains(item.getName())).collect(Collectors.toList());
+        Pickable loot = null;
+
+        if(listOfLoots.size()>0){
+            int nr = new Random(System.currentTimeMillis()).nextInt(listOfLoots.size());
+            loot = listOfLoots.get(nr);
+        }
+        return loot;
     }
 
     public static Pickable getLootUnderPlayer(){

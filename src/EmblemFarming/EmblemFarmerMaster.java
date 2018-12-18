@@ -75,7 +75,6 @@ public class EmblemFarmerMaster extends EmblemFarmer {
                 withdrawGear();
             }
         }
-        /*
         else if (shouldBank()) {
             bankHandling();
         }
@@ -83,7 +82,6 @@ public class EmblemFarmerMaster extends EmblemFarmer {
         else if(MagicHandling.shouldSetupAutoCast()){
             MagicHandling.enableFireStrike();
         }
-        */
 
         else if(!playerInLootArea()){
             walkToLootArea();
@@ -95,19 +93,7 @@ public class EmblemFarmerMaster extends EmblemFarmer {
             lootEmblem();
         }
         else if(shouldFindTarget()){
-            if(shouldWalkOut()){
-                walkOut();
-            }
-            else if(interfaceIsShowingTarget()) {
-                if(shouldSkipTarget(slaves)){
-                    Log.info("Should skip target");
-                    skipTarget();
-                }
-                else{
-                    Log.info("Updating target");
-                    updateTarget();
-                }
-            }
+          findTarget(slaves);
         }
         else if(shouldTradeEmblem()){
             Log.info("Trading over Emblem");
@@ -116,7 +102,7 @@ public class EmblemFarmerMaster extends EmblemFarmer {
         else if(shouldFightBack()){
             attackTarget();
         }
-        return 0;
+        return RandomHandling.randomReturn();
     }
 
 

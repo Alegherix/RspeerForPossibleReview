@@ -140,10 +140,38 @@ public abstract class EmblemFarmer extends Script {
         return target == null;
     }
 
+    protected void findTarget(List<String> targets){
+        if(shouldWalkOut()){
+            walkOut();
+        }
+        else if(interfaceIsShowingTarget()) {
+            if(shouldSkipTarget(targets)){
+                Log.info("Should skip target");
+                skipTarget();
+            }
+            else{
+                Log.info("Updating target");
+                updateTarget(targets);
+            }
+        }
+    }
+
     public void attackTarget(){
         if(Players.getLocal().getTargetIndex() == -1){
             target.interact("Attack");
         }
     }
 
+
+    public boolean interfaceIsShowingTarget(){
+        return InterfaceHandling.targetInterface()!=null && !"None".equals(InterfaceHandling.targetInterface().getText());
+    }
+
+    public void updateTarget(List<String> targets){
+        for(String s  : targets){
+            if(s.equals(targetName())){
+                target = Players.getNearest(player -> player.getName().equals(s));
+            }
+        }
+    }
 }
