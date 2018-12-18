@@ -1,6 +1,8 @@
 package Walkers;
 
+import Utility.RandomHandling;
 import Utility.RunningHandling;
+import org.rspeer.runetek.api.commons.BankLocation;
 import org.rspeer.runetek.api.commons.math.Random;
 import org.rspeer.runetek.api.component.tab.Inventory;
 import org.rspeer.runetek.api.movement.Movement;
@@ -18,9 +20,11 @@ public class NewCharacterWalking extends Script {
         if(!Inventory.isEmpty()) {
             dropAll();
         }
+        else{
+            RunningHandling.smartWalking(BankLocation.EDGEVILLE.getPosition());
+        }
 
-        Movement.walkTo(new Position(3094,3491));
-        return Random.mid(250,400);
+        return RandomHandling.randomReturn();
     }
 
     public void dropAll(){

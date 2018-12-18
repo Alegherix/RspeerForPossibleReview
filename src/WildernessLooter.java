@@ -100,50 +100,15 @@ public class WildernessLooter extends Script {
         }
         else if(Game.isLoggedIn()){
             if(lumbridge.contains(Players.getLocal().getPosition()) || haveDied){
-                haveDied=true;
-                if(RunningHandling.shouldRun()){
-                    RunningHandling.enableRun();
-                }
-                else if(isDeathInList()){
-                    dyingSpotsList.clear();
-                }
-                else if(Players.getLocal().getPosition().getY()>=3487){
-                    haveDied=false;
-                }
-                else{
-                    Movement.walkTo(new Position(3089,3488,0));
-                }
-
+                walkBackFromLumbridge();
             }
             else if(shouldBank()){
-                if(isDeathInList()){
-                    dyingSpotsList.clear();
-                }
-                else if(shouldCrossDitch()){
-                    crossDitchToBank();
-                }
-                else if(CombatHandling.canAndShouldEat(60)){
-                    CombatHandling.eatFood();
-                }
-                else{
-                    BankHandling.walkAndDepositAllAndWithdraw(energyPredicate, nPotionsToWithdraw());
-                }
+                walkToBank();
             }
             else if(!playerInLootArea()){
-                if(shouldDrinkEnergyPot()){
-                    drinkEnergyPotion();
-                }
-                else if(shouldDropVials()){
-                    dropEmptyVials();
-                }
-                else if(shouldRun()){
-                    enableRun();
-                }
-                else{
-                    dyingSpotsList.clear();
-                    walkToLootArea();
-                }
+                walkToLootAreaWithConditions();
             }
+
             else if(playerInLootArea()){
                 if(emblemExist()!=null){
                     if(!Players.getLocal().isMoving()){
@@ -158,15 +123,14 @@ public class WildernessLooter extends Script {
                         Log.info("Under Player attack");
                         runToSafety();
                     }
-
-                }
-                else if(shouldRun()){
-                    enableRun();
                 }
                 else{
-
                     if(playerIsDyingAndNotOnList()){
                         savePositionToList(getDyingPlayer().getPosition());
+                    }
+
+                    else if(shouldRun()){
+                        enableRun();
                     }
 
                     else if(shouldLoot()){
@@ -228,6 +192,10 @@ public class WildernessLooter extends Script {
         return returnTime;
     }
 
+
+
+
+
     // This part is for Calculating if we should run to Loot
 
 
@@ -235,6 +203,11 @@ public class WildernessLooter extends Script {
         return isDeathInList() && !Players.getLocal().isMoving() &&
                 itemToLootBasedOnWalking()!=null
                 && haveTimeToWalk(firstDeathTime(), Players.getLocal().getPosition(), firstDeathPos());
+    }
+
+    public Pickable itemToLootBasedOnWalking2(long time, Position player, Position deathPos){
+        Predicate<Pickable> pred = item -> haveTimeToWalk(time, player, deathPos);
+        return Pickables.getNearest(generalLootPredicate.and(pred));
     }
 
     public Pickable itemToLootBasedOnWalking(){
@@ -480,6 +453,55 @@ public class WildernessLooter extends Script {
         else{
             Interfaces.getComponent(90,50).interact("Abandon target");
             RandomHandling.randomSleep();
+        }
+    }
+
+    // Main script logic reduced
+    public void walkToLootAreaWithConditions(){
+        if(shouldDrinkEnergyPot()){
+            drinkEnergyPotion();
+        }
+        else if(shouldDropVials()){
+            dropEmptyVials();
+        }
+        else if(shouldRun()){
+            enableRun();
+        }
+        else{
+            dyingSpotsList.clear();
+            walkToLootArea();
+        }
+    }
+
+    //
+    public void walkToBank(){
+        if(isDeathInList()){
+            dyingSpotsList.clear();
+        }
+        else if(shouldCrossDitch()){
+            crossDitchToBank();
+        }
+        else if(CombatHandling.canAndShouldEat(60)){
+            CombatHandling.eatFood();
+        }
+        else{
+            BankHandling.walkAndDepositAllAndWithdraw(energyPredicate, nPotionsToWithdraw());
+        }
+    }
+
+    public void walkBackFromLumbridge(){
+        haveDied=true;
+        if(RunningHandling.shouldRun()){
+            RunningHandling.enableRun();
+        }
+        else if(isDeathInList()){
+            dyingSpotsList.clear();
+        }
+        else if(Players.getLocal().getPosition().getY()>=3487){
+            haveDied=false;
+        }
+        else{
+            Movement.walkTo(new Position(3089,3488,0));
         }
     }
 }

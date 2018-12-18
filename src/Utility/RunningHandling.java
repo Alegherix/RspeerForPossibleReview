@@ -33,9 +33,9 @@ public abstract class RunningHandling extends Script {
 
     }
 
-    private static final HashMap<String, Double> weights = WeightHandling.initiateMap(new HashMap<>());
+
     public static final int msPerSquareRunning = 400;
-    public static final int msPerSquareWalking = 805;
+    public static final int msPerSquareWalking = 950;
 
 
     public static double depletionRatePerSquare() {
@@ -48,9 +48,9 @@ public abstract class RunningHandling extends Script {
     }
 
     public static boolean haveTimeToWalk(long nextLootSpawn, Position myPosition, Position positionOfLoot){
-        double nSqBackAndForth = myPosition.distance(positionOfLoot)*2;
-        long msTaken =  msPerSquareWalking *(long)nSqBackAndForth;
-        return nextLootSpawn > (msTaken+1600);
+        double nSqBackAndForth = myPosition.distance(positionOfLoot)*2; // avståndet fram och tillbaka
+        long msTaken =  msPerSquareWalking *(long)nSqBackAndForth; // tiden det borde ta att gå fram och tillbaka
+        return nextLootSpawn > msTaken; // Om Tiden Innan Looten spawnar är större än tiden det tar att gå
     }
 
 

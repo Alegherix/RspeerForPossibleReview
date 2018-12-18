@@ -5,10 +5,7 @@ import org.rspeer.runetek.api.movement.position.Position;
 import org.rspeer.runetek.api.scene.Players;
 import org.rspeer.ui.Log;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -28,7 +25,8 @@ public abstract class LootHandling{
     public static Pickable[] shuffleLootList(Pickable[] lootUnderPlayer){
         if (lootUnderPlayer.length>0){
             for (int i = 0; i < lootUnderPlayer.length; i++) {
-                int randomPos = ThreadLocalRandom.current().nextInt(0, lootUnderPlayer.length);
+                //int randomPos = ThreadLocalRandom.current().nextInt(0, lootUnderPlayer.length);
+                int randomPos = new Random(System.nanoTime()).nextInt(lootUnderPlayer.length);
 
                 Pickable temp = lootUnderPlayer[i];
                 lootUnderPlayer[i] = lootUnderPlayer[randomPos];
