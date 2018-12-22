@@ -9,14 +9,13 @@ import org.rspeer.runetek.api.scene.Pickables;
 import org.rspeer.runetek.api.scene.Players;
 import org.rspeer.script.Script;
 import org.rspeer.script.ScriptMeta;
+import org.rspeer.ui.Log;
 
-import java.io.*;
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static Utility.InterfaceHandling.*;
@@ -29,8 +28,8 @@ public class TestClass extends Script {
     public static final int msPerSquareWalking = 950;
     private final int deathAnimation = 836;
 
-    private final List<String> loots = Arrays.asList("Adamant arrow","Lobster","Swordfish");
-    private final Predicate<Pickable> itemPredicate = item -> loots.contains(item.getName());
+    private final List<String> loots = Arrays.asList("Adamant arrow","Lobster","Swordfish", "Maple shortbow");
+    private final Predicate<Pickable> itemPredicate = item -> loots.contains(item.getName()) && item.getX()>=3072;
 
     @Override
     public void onStart() {
@@ -39,24 +38,32 @@ public class TestClass extends Script {
 
     @Override
     public int loop() {
+        int returnTid = RandomHandling.randomReturn();
         // Lägg till i listan
         if(playerIsDyingAndNotOnList()){
+            Log.info("Should add player do List");
             savePositionToList(getDyingPlayer().getPosition());
         }
         // OM loot under mig, Loota
-        else if(lootUnderMe()){
+        else if(goodLootUnderMe()!=null){
+            Log.info("Loot under me");
             if(!dyingSpotsList.isEmpty() && Players.getLocal().getPosition().equals(dyingSpotsList.getFirst().getDeathPosition())){
                 dyingSpotsList.removeFirst();
             }
-            else if(goodLootUnderMe()!=null){
+            else{
                 goodLootUnderMe().interact("Take");
             }
-
+        }
+        else if(bonesAtDeathPosition()){
+            dyingSpotsList.removeFirst();
         }
         // Om vi listan inte är tom, och det inte finns loot under personen
         else if(!dyingSpotsList.isEmpty()){
+            Log.info("Have death in list");
+            Log.info(dyingSpotsList.getFirst().getDeathTime());
             // Om det finns loot att hämta och vi har tid, Loota
             if(itemToLoot()!= null && haveTimeToLoot(itemToLoot())){
+                Log.info("Have time to loot before Spawn");
                 if(!Players.getLocal().isMoving()){
                     itemToLoot().interact("Take");
                 }
@@ -64,20 +71,34 @@ public class TestClass extends Script {
             else{
                 //Annars gå till korrekt position för att invänta looting
                 if(!Players.getLocal().getPosition().equals(dyingSpotsList.getFirst().getDeathPosition())){
+                    Log.info("Should move to DeathPosition");
                     Movement.setWalkFlag(dyingSpotsList.getFirst().getDeathPosition());
                 }
             }
         }
         else{
+            Log.info("Inne i else");
             //Allmän lootning vid tom Lista.
             if(itemToLoot()!=null && !Players.getLocal().isMoving()){
+                Log.info("Vi har loot och rör mig inte");
                 itemToLoot().interact("Take");
             }
         }
 
-        return RandomHandling.randomReturn();
+        if(!dyingSpotsList.isEmpty()){
+            for(DyingSpot d : dyingSpotsList){
+                d.setDeathTime(d.getDeathTime() - returnTid);
+            }
+        }
+
+        return returnTid;
     }
 
+    private boolean bonesAtDeathPosition() {
+        return !dyingSpotsList.isEmpty() &&
+                Arrays.stream(Pickables.getAt(dyingSpotsList.getFirst().getDeathPosition()))
+                .anyMatch(item -> item.getName().equals("Bones"));
+    }
 
 
     public Pickable itemToLoot(){
@@ -85,8 +106,10 @@ public class TestClass extends Script {
     }
 
     public long timeTakenToLoot(Pickable itemToLoot){
-        double distanceToItem =  itemToLoot.distance(dyingSpotsList.getFirst().getDeathPosition());
-        long timeTaken = (long)distanceToItem * msPerSquareWalking;
+        double myDistanceToItem = itemToLoot.distance(Players.getLocal().getPosition());
+        double distanceFromLootToDeath = itemToLoot.distance(dyingSpotsList.getFirst().getDeathPosition());
+        double totalDistance = myDistanceToItem + distanceFromLootToDeath;
+        long timeTaken = (long)totalDistance * msPerSquareWalking;
         return timeTaken;
     }
 
@@ -124,7 +147,7 @@ public class TestClass extends Script {
     }
 
     public boolean lootUnderMe(){
-        return Pickables.getAt(Players.getLocal().getPosition()).length >= 2;
+        return Pickables.getAt(Players.getLocal().getPosition()).length >= 1;
     }
 
     public Pickable goodLootUnderMe(){
