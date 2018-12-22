@@ -82,10 +82,7 @@ public class WildernessLooter extends Script {
     }
 
 
-    // TODO - Sätt WalkFlag Till destinationen istället
     // TODO - Bättre Check på DeathPosition
-    // TODO - Teleportera med Glory
-    // TODO - Använd glory om den ej har de
     // TODO - Smartare Walking
     // TODO - Loota påväg till mitt mål
 
@@ -114,6 +111,10 @@ public class WildernessLooter extends Script {
                     if(!Players.getLocal().isMoving()){
                         emblemExist().interact("Take");
                     }
+                }
+                else if(shouldWaitOutAttacker()){
+                    Log.info("Should wait out attacker");
+                    abandonAttacker();
                 }
                 else if(isUnderAttack()){
                     if(CombatHandling.canAndShouldEat(50)){
@@ -205,10 +206,6 @@ public class WildernessLooter extends Script {
                 && haveTimeToWalk(firstDeathTime(), Players.getLocal().getPosition(), firstDeathPos());
     }
 
-    public Pickable itemToLootBasedOnWalking2(long time, Position player, Position deathPos){
-        Predicate<Pickable> pred = item -> haveTimeToWalk(time, player, deathPos);
-        return Pickables.getNearest(generalLootPredicate.and(pred));
-    }
 
     public Pickable itemToLootBasedOnWalking(){
         Predicate<Pickable> predicate = item -> item.getPosition().distance(firstDeathPos())<=8;
@@ -225,7 +222,6 @@ public class WildernessLooter extends Script {
             }
         }
     }
-
 
     public boolean otherGoodLoot(Position position){
         return Arrays.stream(Pickables.getAt(position)).anyMatch(pickable -> loots.contains(pickable.getName()));
@@ -250,7 +246,6 @@ public class WildernessLooter extends Script {
         }
     }
 
-
     public boolean isUnderAttack(){
         return Players.getLocal().isHealthBarVisible();
     }
@@ -259,15 +254,7 @@ public class WildernessLooter extends Script {
         int xCoordinate = Players.getLocal().getPosition().getX();
         Movement.toggleRun(true);
         Movement.walkTo(new Position(xCoordinate, 3523));
-        int sleepTime = ThreadLocalRandom.current().nextInt(6500,8800);
-        Log.info("Trying to sleep for " + sleepTime+ "ms");
-        Time.sleep(sleepTime);
-        if(shouldWaitOutAttacker()){
-            Log.info("Should wait out attacker");
-            abandonAttacker();
-        }
     }
-
 
 
     public boolean shouldBank(){
@@ -277,7 +264,6 @@ public class WildernessLooter extends Script {
     }
 
 
-
     boolean playerInLootArea(){
         return WILDY_LOOT_AREA.contains(Players.getLocal().getPosition());
     }
@@ -285,17 +271,21 @@ public class WildernessLooter extends Script {
     public void walkToLootArea(){
         SceneObject ditch = SceneObjects.getNearest("Wilderness Ditch");
         InterfaceComponent wildyInterface = Interfaces.getComponent(475,11);
-        if (wildyInterface!=null) {
+
+        if (wildyInterface!=null && Players.getLocal().getY()<=3521) {
             wildyInterface.interact("Enter Wilderness");
+            RandomHandling.randomSleep();
         }
-        else if(ditch!=null && Players.getLocal().getPosition().getX()<=3110){
+        else if(ditch!=null && Players.getLocal().getPosition().getX()<=3110 && Players.getLocal().getY()<=3521){
             ditch.interact("Cross");
+            RandomHandling.randomSleep();
         }
         else{
             if(Players.getLocal().getPosition().getY() < 3521){
                 Log.info("Trying to walk back to Wilderness");
                 Movement.walkTo(new Position(3087, 3520, 0));
-            }else{
+            }
+            else{
                 Log.info("Trying to walk back to the middle of wildy");
                 Movement.walkTo(new Position(3090, 3533));
             }
@@ -303,17 +293,12 @@ public class WildernessLooter extends Script {
     }
 
     public boolean shouldWaitOutAttacker(){
-        InterfaceComponent attacker = Interfaces.getComponent(90,47);
-        if(attacker!=null){
-            String nameOfAttacker = attacker.getText();
-            return Players.getLocal().getY() <=3524 && Players.getNearest(name -> name.getName().equals(nameOfAttacker))!=null;
-        }
-        return false;
+        return Players.getLocal().getY()<=3224 && haveTarget();
     }
 
     public void abandonAttacker(){
         Log.info("Sleeping then abandoning attacker");
-        Time.sleep(RandomHandling.randomNumber(21000,23000));
+        Time.sleep(RandomHandling.randomNumber(15000,16000));
         abandonTarget();
 
     }
@@ -426,7 +411,7 @@ public class WildernessLooter extends Script {
         List<DyingSpot> spotsToRemove = new ArrayList<>();
         for(DyingSpot d : dyingSpotsList){
             if(d.getDeathTime()<=-14500){
-                Log.info("Removing " + d.getDeathPosition() +" from List" + "It's current DeahTime is " + d.getDeathTime());
+                //Log.info("Removing " + d.getDeathPosition() +" from List" + "It's current DeahTime is " + d.getDeathTime());
                 spotsToRemove.add(d);
             }
         }
@@ -454,7 +439,15 @@ public class WildernessLooter extends Script {
     //This deals with the interface stuff
 
     public static boolean haveTarget(){
-        return Interfaces.getComponent(90,47).getText()!=null && !"None".equals(Interfaces.getComponent(90,47).getText());
+        try {
+            return Interfaces.getComponent(90, 47).getText() != null
+                    && !"None".equals(Interfaces.getComponent(90, 47).getText())
+                    && !"<col=ff0000>---</col>".equals(Interfaces.getComponent(90, 47).getText());
+        }
+        catch (NullPointerException e){
+            System.out.println("No target");
+        }
+        return false;
     }
 
     public static void abandonTarget(){

@@ -5,6 +5,7 @@ import static Utility.InterfaceHandling.gloryInterface;
 import static Utility.InterfaceHandling.targetInterface;
 
 
+import Utility.FileReading;
 import Utility.InterfaceHandling;
 import Utility.RandomHandling;
 import org.rspeer.runetek.adapter.scene.Player;
@@ -24,25 +25,23 @@ import java.util.List;
 import java.util.function.Predicate;
 
 @ScriptMeta(developer = "Slazter", desc = "Emblem slave", name = "Emblem SLAVE")
-public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListener {
+public class EmblemFarmerSlave extends EmblemFarmer{
 
-    private String master;
-    private boolean tradePending;
+
     boolean haveDied;
     private List<String> masters;
 
     @Override
     public void onStart() {
         super.onStart();
-        tradePending = false;
-        master = "";
         haveDied=false;
-        masters = Arrays.asList("psychoalfa9","Anotherone");
+        masters = FileReading.readText("masters");
     }
 
     @Override
     public int loop() {
         if(playerInLumbridge()) {
+            target = null;
             lumbridgeTeleportHandling();
         }
         else if(shouldBankGlory()){
@@ -54,10 +53,6 @@ public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListen
         else if(shouldFindTarget()){
           findTarget(masters);
         }
-        else if(!inventoryContainsEmblem()){
-            acceptEmblem();
-        }
-        // Allt fungerar fram hit minst
         else if(shouldInitiateAttack()){
             initiateAttack();
         }
@@ -69,35 +64,15 @@ public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListen
     private void initiateAttack() {
         Log.info("Attacking");
         if(Players.getLocal().getTargetIndex() == -1){{
-            Players.getNearest(master).interact("Attack");
+            Players.getNearest(target.getName()).interact("Attack");
         }}
 
     }
 
     private boolean shouldInitiateAttack() {
         Log.info("Should initiate Attack");
-        //Master har samma y som vi har, därför initia attack
-        return Players.getNearest(master).getY()>=Players.getLocal().getY();
+        return Players.getNearest(target.getName()).getY() >= Players.getLocal().getY();
     }
-
-
-
-    public void acceptEmblem(){
-        Log.info("Waiting for Emblem");
-        if(Inventory.isEmpty()){
-            if(Trade.isOpen()){
-                Log.info("Acceptng Emblem");
-                if(Trade.hasOtherAccepted()){
-                    Trade.accept();
-                }
-            }
-            else if(tradePending){
-                Players.getNearest(master).interact("Trade with");
-                tradePending = false;
-            }
-        }
-    }
-
 
 
     boolean shouldBankGlory(){
@@ -109,26 +84,6 @@ public class EmblemFarmerSlave extends EmblemFarmer implements ChatMessageListen
         if(BankHandling.walkToBankAndOpen()){
             Bank.deposit(generalGloryPred,1);
             RandomHandling.randomSleep();
-        }
-    }
-
-    public boolean inventoryContainsEmblem(){
-        return Inventory.contains(item -> item.getName().contains("emblem"));
-    }
-
-    /*
-    boolean shouldWalkOut(){
-        Log.info("Should walk out");
-        return inventoryContainsEmblem() && Players.getLocal().getY() < MAX_Y;
-    }
-    */
-    @Override
-    public void notify(ChatMessageEvent msg) {
-        if (!Trade.isOpen()) {
-            if (msg.getType().equals(ChatMessageType.TRADE)) {
-                master = msg.getSource();
-                tradePending = true;
-            }
         }
     }
 

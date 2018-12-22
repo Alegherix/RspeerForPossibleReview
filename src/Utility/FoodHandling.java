@@ -25,6 +25,6 @@ public abstract class FoodHandling extends Script {
 
     public static final void eat(){
         Inventory.getFirst(FOOD).interact("Eat");
-        RandomHandling.randomSleep();
+        RandomHandling.randomSleep(650,700);
     }
 }

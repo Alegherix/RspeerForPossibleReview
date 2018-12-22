@@ -10,11 +10,14 @@ import org.rspeer.runetek.api.component.Bank;
 import org.rspeer.runetek.api.component.Trade;
 import org.rspeer.runetek.api.component.tab.Combat;
 import org.rspeer.runetek.api.component.tab.Inventory;
+import org.rspeer.runetek.api.input.Camera;
 import org.rspeer.runetek.api.scene.Pickables;
 import org.rspeer.runetek.api.scene.Players;
 import org.rspeer.script.ScriptMeta;
 import org.rspeer.ui.Log;
 
+import java.awt.geom.Area;
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
@@ -38,22 +41,22 @@ public class EmblemFarmerMaster extends EmblemFarmer {
     private List<String> runes;
     private List<String> slaves;
     private boolean haveAllGear;
-    private boolean haveTraded;
-    private final String TRADE_TEXT = "Waiting for other player...";
     private final Predicate<Pickable> lootPred = item -> item.distance(Players.getLocal())<=2 && item.getName().equals(LOWEST_TIER_EMBLEM);
+    private Predicate<Item> emblempred = item -> item.getName().contains("emblem");
 
+
+    // Todo - Hämta personen som hintaArrowen pekar på
+    // Todo om den personen finns i listan, attacerka den.
 
     @Override
     public void onStart() {
         super.onStart();
-        slaves = slaves();
+        slaves = FileReading.readText("slaves");
         haveTarget = false;
         haveDied = false;
         gear = Arrays.asList("Zamorak monk bottom", "Zamorak monk top", "Staff of fire", "Blue wizard hat");
         runes = Arrays.asList("Mind rune", "Air rune");
         haveAllGear = true;
-        haveTraded = false;
-
     }
 
     @Override
@@ -76,32 +79,51 @@ public class EmblemFarmerMaster extends EmblemFarmer {
             }
         }
         else if (shouldBank()) {
-            bankHandling();
+            Log.info("Should Bank");
+
+            if(AreaHandling.shouldCrossDitch()){
+                Log.info("Should cross ditch");
+                AreaHandling.crossDitchToBank();
+            }
+
+            else{
+                bankHandling();
+            }
+
         }
 
         else if(MagicHandling.shouldSetupAutoCast()){
+            Log.info("Should setup Magic");
             MagicHandling.enableFireStrike();
         }
 
         else if(!playerInLootArea()){
+            Log.info("Should walk to Loot Area");
             walkToLootArea();
         }
         else if(hasFoodAndShouldEat(90)){
+            Log.info("Should Eat");
             eat();
         }
         else if(emblemOnGround()!= null){
+            Log.info("Should Loot");
             lootEmblem();
         }
+        else if (target!=null && Players.getNearest(target.getName()).isHidden()){
+            // Om har target men ej ser längre, då är target null
+            Log.info("Setting to null as Target probably died");
+            target = null;
+        }
+
         else if(shouldFindTarget()){
           findTarget(slaves);
         }
-        else if(shouldTradeEmblem()){
-            Log.info("Trading over Emblem");
-            tradeTarget();
-        }
+
         else if(shouldFightBack()){
+            Log.info("Should fight back");
             attackTarget();
         }
+
         return RandomHandling.randomReturn();
     }
 
@@ -153,13 +175,9 @@ public class EmblemFarmerMaster extends EmblemFarmer {
     }
 
 
-    public boolean interfaceIsShowingTarget(){
-        return InterfaceHandling.targetInterface()!=null && !"None".equals(InterfaceHandling.targetInterface().getText());
-    }
 
     public void bankHandling(){
         if (BankHandling.walkToBankAndOpen()) {
-
             if(Combat.isPoisoned() && !Inventory.isEmpty()){
                 Bank.depositInventory();
             }
@@ -168,14 +186,20 @@ public class EmblemFarmerMaster extends EmblemFarmer {
                 if (Inventory.contains(HIGHEST_TIER_EMBLEM)) {
                     Bank.depositAll(HIGHEST_TIER_EMBLEM);
                 }
-                else if (!Inventory.contains(LOWEST_TIER_EMBLEM)) {
+                else if (!Inventory.contains(emblempred)) {
                     Log.info("Should withdraw Emblem");
-                    Bank.withdraw(LOWEST_TIER_EMBLEM, 2);
+                    Bank.withdraw(LOWEST_TIER_EMBLEM, 1);
                 }
                 else if (!CombatHandling.canEat()) {
                     Log.info("Should withdraw Food");
                     int amount = Math.min(10, Inventory.getFreeSlots());
-                    Bank.withdraw("Sea turtle", amount);
+                    Bank.withdraw("Shark", amount);
+                }
+                else if(!hasRunes()){
+                    Bank.withdraw("Mind rune",500);
+                    randomSleep();
+                    Bank.withdraw("Air rune",500);
+                    randomSleep();
                 }
             }
             randomSleep();
@@ -183,57 +207,17 @@ public class EmblemFarmerMaster extends EmblemFarmer {
     }
 
     private boolean shouldBank() {
-        return Inventory.contains(HIGHEST_TIER_EMBLEM) || !Inventory.contains(LOWEST_TIER_EMBLEM)
-                || !hasFood() || Combat.isPoisoned();
+        return Inventory.contains(HIGHEST_TIER_EMBLEM) || !Inventory.contains(emblempred)
+                || !hasFood() || Combat.isPoisoned() || !hasRunes();
     }
 
-    public void updateTarget(){
-        for(String s  : slaves){
-            if(s.equals(targetName())){
-                target = Players.getNearest(player -> player.getName().equals(s));
-            }
-        }
-    }
-
-    public boolean shouldTradeEmblem(){
-        return Inventory.contains(LOWEST_TIER_EMBLEM) && !haveTraded;
-    }
-
-
-    public void tradeTarget(){
-        if(Trade.isOpen()){
-            if(!haveTraded){
-                Inventory.getFirst(LOWEST_TIER_EMBLEM).interact("Offer");
-                RandomHandling.randomSleep();
-                haveTraded = true;
-            }
-            else if(haveTraded){
-                if(secondTradeWindow()!=null){
-                    if(!TRADE_TEXT.equals(secondTradeWindow().getText())){
-                        Trade.accept();
-                        haveTraded = false;
-                    }
-                }
-                else if(firstTradeWindow()!=null){
-                    if(!TRADE_TEXT.equals(firstTradeWindow().getText())){
-                        Trade.accept();
-                    }
-                }
-            }
-        }
-        else{
-            target.interact("Trade with");
-            Time.sleep(RandomHandling.randomNumber(1500,3800));
-        }
+    private boolean hasRunes() {
+        return Inventory.contains("Mind rune","Air rune");
     }
 
     public boolean shouldFightBack(){
         return Players.getLocal().isHealthBarVisible();
     }
 
-
-    public void lootTarget(){
-
-    }
 
 }

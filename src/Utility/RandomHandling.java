@@ -31,12 +31,12 @@ public class RandomHandling {
     }
 
     public static List<String> slaves(){
-        String path = "C:\\Users\\Martin.DESKTOP-1AEIPCT\\Documents\\RSPeer\\Slaves.txt";
+        String path = "C:\\Slaves.txt";
         return characterList(path);
     }
 
     public static List<String> masters(){
-        String path = "C:\\Users\\Martin.DESKTOP-1AEIPCT\\Documents\\RSPeer\\Masters";
+        String path = "C:\\masters.txt";
         return characterList(path);
     }
 

@@ -19,11 +19,12 @@ import org.rspeer.script.Script;
 import org.rspeer.ui.Log;
 
 import static Utility.RandomHandling.*;
-import static Utility.RunningHandling.enableRun;
 import static Utility.InterfaceHandling.*;
 
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public abstract class EmblemFarmer extends Script {
 
@@ -36,6 +37,9 @@ public abstract class EmblemFarmer extends Script {
     protected static Area WILDY_LOOT_AREA;
     protected final int MAX_Y = 3524;
     protected Player target;
+    protected String targetName;
+    protected boolean haveLogged;
+    protected int counter;
 
 
     @Override
@@ -45,8 +49,15 @@ public abstract class EmblemFarmer extends Script {
         lumbridgeLvl2 = Area.rectangular(3226, 3205, 3202, 3230,2);
         WILDY_LOOT_AREA = AreaHandling.initiateWildernessArea();
         target = null;
-
+        targetName = "";
+        haveLogged = false;
+        counter = 0;
     }
+
+
+    // TODO - Kommer behöva resetta haveLogged
+
+    //                                      Deals with Getting Back                                                  //
 
     public boolean playerInLumbridge(){
         return lumbridge.contains(Players.getLocal().getPosition()) ||
@@ -70,11 +81,6 @@ public abstract class EmblemFarmer extends Script {
         }
     }
 
-    protected void skipTarget() {
-        Log.info("Skipping target");
-        InterfaceHandling.abandonTarget();
-    }
-
 
     protected void withdrawGlory(){
         if(BankHandling.walkToBankAndOpen()){
@@ -85,9 +91,7 @@ public abstract class EmblemFarmer extends Script {
         }
     }
 
-    boolean shouldSkipTarget(List<String> list) {
-        return !list.contains(targetInterface().getText());
-    }
+
 
     public void teleportToEdgeville(){
         if(edgevilleTeleportOption() != null){
@@ -99,19 +103,15 @@ public abstract class EmblemFarmer extends Script {
         randomSleep();
     }
 
+    //                                        STOPS DEALING WITH WALKING BACK TO EDGEVILLE                            //
+
+
+    //                                        DEALS WITH WALKING TO WILDERNESS AREA                                   //
 
     boolean playerInLootArea(){
         return WILDY_LOOT_AREA.contains(Players.getLocal().getPosition());
     }
 
-    protected boolean shouldWalkOut(){
-        return Players.getLocal().getY()<=3524;
-    }
-
-    protected void walkOut(){
-        Movement.walkTo(new Position(Players.getLocal().getPosition().getX(), Players.getLocal().getY()+1));
-        RandomHandling.randomSleep();
-    }
 
     public void walkToLootArea(){
         SceneObject ditch = SceneObjects.getNearest("Wilderness Ditch");
@@ -135,8 +135,19 @@ public abstract class EmblemFarmer extends Script {
         }
     }
 
+    //                                        STOPS DEALING WITH WALKING TO WILDERNESS AREA                           //
+
+
+    protected boolean shouldWalkOut(){
+        return Players.getLocal().getY()<=3524;
+    }
+
+    protected void walkOut(){
+        Movement.walkTo(new Position(Players.getLocal().getPosition().getX(), Players.getLocal().getY()+1));
+        RandomHandling.randomSleep();
+    }
+
     protected boolean shouldFindTarget() {
-        //När det finns folk ifrån slave listan i närheten
         return target == null;
     }
 
@@ -144,16 +155,43 @@ public abstract class EmblemFarmer extends Script {
         if(shouldWalkOut()){
             walkOut();
         }
-        else if(interfaceIsShowingTarget()) {
-            if(shouldSkipTarget(targets)){
-                Log.info("Should skip target");
-                skipTarget();
+        /*
+        else if(counter >=6 ){
+            Game.logout();
+            randomSleep();
+            counter =0;
+        }
+        */
+        else if(hasTimer() && !haveLogged){
+            logoutUntilNoTimer();
+        }
+        else if(hasTarget()) {
+            if(haveLogged){
+                haveLogged = false;
+            }
+            else if(correctNameInList(targetName(), targets)) {
+                if (target == null) {
+                    target = getTarget(targets);
+                }
             }
             else{
-                Log.info("Updating target");
-                updateTarget(targets);
+                abandonTarget();
             }
         }
+    }
+
+    public static boolean correctNameInList(String name, List<String> nameList){
+        return nameList.stream().anyMatch(namesInList -> namesInList.equals(name));
+    }
+
+
+    public Player getTarget(List<String> targets){
+        for(String name : targets){
+            if(Players.getNearest(name)!=null){
+                return Players.getNearest(name);
+            }
+        }
+        return null;
     }
 
     public void attackTarget(){
@@ -162,16 +200,16 @@ public abstract class EmblemFarmer extends Script {
         }
     }
 
-
-    public boolean interfaceIsShowingTarget(){
-        return InterfaceHandling.targetInterface()!=null && !"None".equals(InterfaceHandling.targetInterface().getText());
-    }
-
-    public void updateTarget(List<String> targets){
-        for(String s  : targets){
-            if(s.equals(targetName())){
-                target = Players.getNearest(player -> player.getName().equals(s));
-            }
+    public void logoutUntilNoTimer(){
+        try{
+            String stringTime = targetTimer().substring(0,2).replaceAll("\\D","");
+            int time = Integer.parseInt(stringTime);
+            Game.logout();
+            Time.sleep(time*60 * 1000);
+            haveLogged = true;
+        }
+        catch (Exception e){
+            Log.info("Numbers were not parsed correctly");
         }
     }
 }
