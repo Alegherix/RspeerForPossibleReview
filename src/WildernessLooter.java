@@ -30,8 +30,6 @@ import java.util.stream.Collectors;
 
 import static Utility.PotionHandling.*;
 import static Utility.RunningHandling.*;
-import static Utility.LootHandling.*;
-
 
 
 @ScriptMeta(developer = "Martin", desc = "Wilderness Looter", name = "Wildy Looter")
@@ -86,6 +84,9 @@ public class WildernessLooter extends Script {
     // TODO - Smartare Walking
     // TODO - Loota påväg till mitt mål
 
+    // DE JAG ÄNDRAT PÅ 22/12
+    // NÄR MAN KAN LOOTA
+
 
     @Override
     public int loop() {
@@ -105,112 +106,98 @@ public class WildernessLooter extends Script {
             else if(!playerInLootArea()){
                 walkToLootAreaWithConditions();
             }
-
             else if(playerInLootArea()){
-                if(emblemExist()!=null){
-                    if(!Players.getLocal().isMoving()){
-                        emblemExist().interact("Take");
-                    }
-                }
-                else if(shouldWaitOutAttacker()){
-                    Log.info("Should wait out attacker");
-                    abandonAttacker();
-                }
-                else if(isUnderAttack()){
-                    if(CombatHandling.canAndShouldEat(50)){
-                        CombatHandling.eatFood();
-                    }
-                    else{
-                        Log.info("Under Player attack");
-                        runToSafety();
-                    }
-                }
-                else{
-                    if(playerIsDyingAndNotOnList()){
-                        savePositionToList(getDyingPlayer().getPosition());
-                    }
+                if(!preLootHandling()){
 
-                    else if(shouldRun()){
-                        enableRun();
-                    }
+                     if(playerIsDyingAndNotOnList()){
+                         savePositionToList(getDyingPlayer().getPosition());
+                     }
 
-                    else if(shouldLoot()){
-                        itemToLootBasedOnWalking().interact("Take");
-                    }
+                     else if(itemToLoot()!=null && haveTimeToLoot(itemToLoot())){
+                         if(Movement.getDestination()==null ||
+                                 !itemToLoot().getPosition().equals(Movement.getDestination())){
+                             itemToLoot().interact("Take");
+                         }
+                     }
 
-                    // This part deals with what happends when we stand at the Location where player died
-                    else if(!dyingSpotsList.isEmpty() && standingAtDeathPosition()){
+                     // This part deals with what happends when we stand at the Location where player died
+                     else if(!dyingSpotsList.isEmpty() && standingAtDeathPosition()){
+                         if(!timerStarted && lootSpawningSoon()){
+                             startBackupTimer();
+                         }
 
+                         if(bonesAtDeathSpot() && lootShouldHaveSpawned() && !lootHaveSpawned){
+                             lootHaveSpawned = true;
+                         }
 
-                        if(!timerStarted && lootSpawningSoon()){
-                            startBackupTimer();
-                        }
+                         if(getLootUnderPlayer()!=null){
+                             getLootUnderPlayer().interact("Take");
+                         }
 
-                        if(bonesAtDeathSpot() && lootShouldHaveSpawned() && !lootHaveSpawned){
-                            lootHaveSpawned = true;
-                        }
-
-                        if(getLootUnderPlayer2()!=null){
-                            getLootUnderPlayer2().interact("Take");
-                        }
-
-                        else if(backupTime<=0 || (lootHaveSpawned)){
-                            removeDeathInstance();
-                        }
-                        updateBackupTimer(returnTime);
-                    }
+                         else if(backupTime<=0 || (lootHaveSpawned)){
+                             removeDeathInstance();
+                         }
+                         updateBackupTimer(returnTime);
+                     }
 
 
-                    // This part deals with walking to the death position
-                    else if(isDeathInList() && !standingAtDeathPosition()){
-                        resetBackupTimerAndLoot();
-                        clearBadSpots();
-                        if(!Movement.isRunEnabled() && Movement.getRunEnergy()>=1 && firstDeathTime()<=2500){
-                            enableRun();
-                        }
-                        if(isDeathInList() && !Players.getLocal().isMoving()){
-                            walkToDeathPos();
-                        }
+                     // This part deals with walking to the death position
+                     else if(isDeathInList() && !standingAtDeathPosition()){
+                         resetBackupTimerAndLoot();
+                         clearBadSpots();
+                         if(!Movement.isRunEnabled() && Movement.getRunEnergy()>=1 && firstDeathTime()<=2500){
+                             enableRun();
+                         }
+                         // Ändra så att om Inte walkflaggen är på utsatt position så gå dit
+                         if(isDeathInList()){
+                             if(Movement.getDestination()==null ||
+                                     !Movement.getDestination().equals(dyingSpotsList.getFirst().getDeathPosition())){
+                                 walkToDeathPos();
+                             }
+                             else if(Players.getLocal().isMoving()){
+                                 clearBadSpots();
+                             }
+                         }
+                     }
+                     if(isDeathInList()){
+                         int extra = 0;
+                         if(!standingAtDeathPosition() && haveTarget() || (standingAtDeathPosition() && dyingSpotsList.getFirst().getDeathTime()>2500 && haveTarget())){
+                             extra = abandonTarget();
 
-                    }
-                    if(isDeathInList()){
-                        updateTimer(returnTime);
-                        if(!standingAtDeathPosition() && haveTarget() || (standingAtDeathPosition() && dyingSpotsList.getFirst().getDeathTime()>2500 && haveTarget())){
-                            abandonTarget();
-                        }
-                        clearMissedDeathPositions();
-                    }
-
-                    else{
-                        lootWithoutRestrictions();
-                    }
-
-                }
-
+                         }
+                         updateTimer(returnTime + extra);
+                         clearMissedDeathPositions();
+                     }
+                     else{
+                         lootWithoutRestrictions();
+                     }
+                 }
             }
-        }
-
-        return returnTime;
+         }
+         return returnTime;
     }
 
 
+    public long timeTakenToLoot(Pickable itemToLoot){
+        double myDistanceToItem = itemToLoot.distance(Players.getLocal().getPosition());
+        double distanceFromLootToDeath = itemToLoot.distance(dyingSpotsList.getFirst().getDeathPosition());
+        double totalDistance = myDistanceToItem + distanceFromLootToDeath;
+        long timeTaken = (long)totalDistance * msPerSquareWalking;
+        return timeTaken;
+    }
 
+    public boolean haveTimeToLoot(Pickable itemToLoot){
+        // Kanske tänka på delay i samband med msPerSquareWalking som en statisk faktor
+        return !dyingSpotsList.isEmpty() &&
+                dyingSpotsList.getFirst().getDeathTime() > timeTakenToLoot(itemToLoot);
+    }
 
+    public Pickable itemToLoot(){
+        return Pickables.getNearest(generalLootPredicate);
+    }
 
     // This part is for Calculating if we should run to Loot
 
-
-    public boolean shouldLoot(){
-        return isDeathInList() && !Players.getLocal().isMoving() &&
-                itemToLootBasedOnWalking()!=null
-                && haveTimeToWalk(firstDeathTime(), Players.getLocal().getPosition(), firstDeathPos());
-    }
-
-
-    public Pickable itemToLootBasedOnWalking(){
-        Predicate<Pickable> predicate = item -> item.getPosition().distance(firstDeathPos())<=8;
-        return Pickables.getNearest(generalLootPredicate.and(predicate));
-    }
 
 
     //                      Here the part with regards to Calculating the Looting Ends.
@@ -301,6 +288,7 @@ public class WildernessLooter extends Script {
         Time.sleep(RandomHandling.randomNumber(15000,16000));
         abandonTarget();
 
+
     }
 
     public static Player getDyingPlayer(){
@@ -350,7 +338,7 @@ public class WildernessLooter extends Script {
     }
 
     public boolean lootShouldHaveSpawned(){
-        return dyingSpotsList.getFirst().getDeathTime()<=-1000;
+        return dyingSpotsList.getFirst().getDeathTime()<=0;
     }
 
     public static void walkToDeathPos(){
@@ -377,7 +365,7 @@ public class WildernessLooter extends Script {
         timerStarted=false;
     }
 
-    public Pickable getLootUnderPlayer2(){
+    public Pickable getLootUnderPlayer(){
         List<Pickable> listOfLoots = Arrays.asList(Pickables.getAt(Players.getLocal().getPosition()));
         listOfLoots = listOfLoots.stream().filter(item -> loots.contains(item.getName())).collect(Collectors.toList());
         Pickable loot = null;
@@ -389,18 +377,7 @@ public class WildernessLooter extends Script {
         return loot;
     }
 
-    public static Pickable getLootUnderPlayer(){
-        Pickable[] lootUnderPlayer = shuffleLootList(Pickables.getAt(Players.getLocal().getPosition()));
-        if(lootUnderPlayer!=null){
-            List<String> stringList = Arrays.stream(lootUnderPlayer).map(pickable -> pickable.getName()).collect(Collectors.toList());
-            stringList.retainAll(loots);
 
-            if(stringList.size()>0){
-                return Pickables.getNearest(stringList.get(0));
-            }
-        }
-        return null;
-    }
 
     public static void removeDeathInstance(){
         //Log.info("Removing " + dyingSpotsList.getFirst().getDeathPosition() + " from list");
@@ -450,15 +427,17 @@ public class WildernessLooter extends Script {
         return false;
     }
 
-    public static void abandonTarget(){
+    public static int abandonTarget(){
+        int number = RandomHandling.randomNumber(980,1050);
         if(Dialog.isOpen()){
             Dialog.process(0);
-            RandomHandling.randomSleep();
         }
         else{
             Interfaces.getComponent(90,50).interact("Abandon target");
-            RandomHandling.randomSleep();
+            Time.sleep(number);
+            return number;
         }
+        return 0;
     }
 
     // Main script logic reduced
@@ -492,6 +471,36 @@ public class WildernessLooter extends Script {
         else{
             BankHandling.walkAndDepositAllAndWithdraw(energyPredicate, nPotionsToWithdraw());
         }
+    }
+
+    public boolean preLootHandling() {
+        if (emblemExist() != null) {
+            if (!Players.getLocal().isMoving()) {
+                emblemExist().interact("Take");
+                return true;
+            }
+        }
+        else if (shouldWaitOutAttacker()) {
+            Log.info("Should wait out attacker");
+            abandonAttacker();
+            return true;
+        }
+        else if (isUnderAttack()) {
+            if (CombatHandling.canAndShouldEat(50)) {
+                CombatHandling.eatFood();
+                return true;
+            }
+            else {
+                Log.info("Under Player attack");
+                runToSafety();
+                return true;
+            }
+        }
+        else if(shouldRun()){
+            enableRun();
+            return true;
+        }
+        return false;
     }
 
     public void walkBackFromLumbridge(){
