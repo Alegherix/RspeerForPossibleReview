@@ -8,6 +8,7 @@ import org.rspeer.runetek.api.movement.Movement;
 import org.rspeer.runetek.api.movement.position.Position;
 import org.rspeer.runetek.api.scene.Pickables;
 import org.rspeer.runetek.api.scene.Players;
+import org.rspeer.runetek.providers.RSItemDefinition;
 import org.rspeer.script.Script;
 import org.rspeer.script.ScriptMeta;
 import org.rspeer.ui.Log;
@@ -53,13 +54,15 @@ public class TestClass extends Script {
 
     @Override
     public int loop() {
-
-        Player[] nearbyPlayers = Players.getLoaded(player -> player.distance(Players.getLocal().getPosition())<=10);
-        for(Player p : nearbyPlayers){
-            Log.info("Fetching the Items of player: " + p.getName());
-            getPlayerEquipment(p).stream().forEach(Log::info);
+        Player p = Players.getLocal();
+        List<String> items  = getPlayerEquipment(p);
+        if(items.size()>0){
+            Log.info("Wearing items");
+            items.stream().forEach(Log::info);
         }
-
+        else{
+            Log.info("Not wearing items");
+        }
         return 2500;
     }
 
