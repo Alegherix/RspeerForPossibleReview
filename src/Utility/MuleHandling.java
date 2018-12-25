@@ -21,7 +21,7 @@ import static Utility.InterfaceHandling.*;
 public abstract class MuleHandling extends Script {
 
 
-    private static final String PLAYER_TRADING_TO = "psychoalfa9";
+    private static final String PLAYER_TRADING_TO = "94cruelgnu";
     private static final String TRADE_TEXT = "Waiting for other player...";
     static boolean shouldTrade = false;
     static boolean secondScreenWasVisible = false;

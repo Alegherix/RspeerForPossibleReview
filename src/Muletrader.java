@@ -24,7 +24,7 @@ import static Utility.InterfaceHandling.*;
 public class Muletrader extends Script {
 
 
-    private final String PLAYER_TRADING_TO = "psychoalfa9";
+    private final String PLAYER_TRADING_TO = "monkas45";
     private final String TRADE_TEXT = "Waiting for other player...";
     boolean shouldTrade;
     boolean secondScreenWasVisible;
@@ -126,12 +126,13 @@ public class Muletrader extends Script {
                 secondScreenWasVisible = false;
             }
 
+
             else if(secondScreenWasVisible && bankIsEmpty && secondTradeWindow()==null){
                 Log.info("We've cleared the bank by now");
-                Log.info("Time to logout");
+                Log.info("Time to Sleep");
                 Time.sleep(900000);
-                Game.logout();
             }
+
 
             else if(shouldTrade){
                Log.info("Should Trade other player");

@@ -47,6 +47,10 @@ public class TestClass extends Script {
         return equipmentList;
     }
 
+    public boolean shouldSavePlayerToList(Player p){
+       return getPlayerEquipment(p).size()>=3;
+    }
+
     @Override
     public void onStart() {
 

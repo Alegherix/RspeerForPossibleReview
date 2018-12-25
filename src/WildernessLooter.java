@@ -4,6 +4,7 @@ import org.rspeer.runetek.adapter.component.Item;
 import org.rspeer.runetek.adapter.scene.Pickable;
 import org.rspeer.runetek.adapter.scene.Player;
 import org.rspeer.runetek.adapter.scene.SceneObject;
+import org.rspeer.runetek.api.Definitions;
 import org.rspeer.runetek.api.Game;
 import org.rspeer.runetek.api.Worlds;
 import org.rspeer.runetek.api.commons.Time;
@@ -109,8 +110,8 @@ public class WildernessLooter extends Script {
             else if(playerInLootArea()){
                 if(!preLootHandling()){
 
-                     if(playerIsDyingAndNotOnList()){
-                         savePositionToList(getDyingPlayer().getPosition());
+                     if(playerIsDyingAndNotOnList() && shouldSavePlayerToList(getDyingPlayer())){
+                             savePositionToList(getDyingPlayer().getPosition());
                      }
 
                      else if(itemToLoot()!=null && haveTimeToLoot(itemToLoot())){
@@ -177,6 +178,23 @@ public class WildernessLooter extends Script {
          return returnTime;
     }
 
+
+    public List<String> getPlayerEquipment(Player p) {
+        List<String> equipmentList = new LinkedList<String>();
+        if (p != null) {
+            int[] equipment = p.getAppearance().getEquipmentIds();
+            for (int i = 0; i < equipment.length; i++) {
+                if (equipment[i] - 512 > 0) {
+                    equipmentList.add(Definitions.getItem(equipment[i] - 512).getName());
+                }
+            }
+        }
+        return equipmentList;
+    }
+
+    public boolean shouldSavePlayerToList(Player p){
+        return getPlayerEquipment(p).size()>=3;
+    }
 
     public long timeTakenToLoot(Pickable itemToLoot){
         double myDistanceToItem = itemToLoot.distance(Players.getLocal().getPosition());
