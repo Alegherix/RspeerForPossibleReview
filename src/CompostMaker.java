@@ -10,7 +10,6 @@ import org.rspeer.script.ScriptMeta;
 
 import java.util.function.Predicate;
 
-@ScriptMeta(developer = "Slazter", desc = "Cretes Supercompost", name = "Composter")
 public class CompostMaker extends Script {
     Predicate<Item> compostBucket = item -> item.getName().equals("Compost");
     Predicate<Item> compostPotion = item -> item.getName().contains("Compost potion");
