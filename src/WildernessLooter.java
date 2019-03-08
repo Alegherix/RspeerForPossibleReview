@@ -1,4 +1,5 @@
-import Utility.*;
+package src;
+
 import org.rspeer.runetek.adapter.component.InterfaceComponent;
 import org.rspeer.runetek.adapter.component.Item;
 import org.rspeer.runetek.adapter.scene.Pickable;
@@ -23,6 +24,7 @@ import org.rspeer.runetek.api.scene.SceneObjects;
 import org.rspeer.script.Script;
 import org.rspeer.script.ScriptMeta;
 import org.rspeer.ui.Log;
+import src.Utility.CombatHandling;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -55,12 +57,12 @@ public class WildernessLooter extends Script {
     @Override
     public void onStart() {
         // Initiate Areas
-        WILDY_LOOT_AREA = AreaHandling.initiateWildernessArea();
+        WILDY_LOOT_AREA = Utility.AreaHandling.initiateWildernessArea();
         lumbridge = Area.rectangular(3217, 3223, 3226, 3214);
 
         // Initiate Lists
         dyingSpotsList = new LinkedList<>();
-        loots = LootHandling.initiateLoots();
+        loots = Utility.LootHandling.initiateLoots();
 
         //Initiate Variables
         deathAnimation = 836;
@@ -279,11 +281,11 @@ public class WildernessLooter extends Script {
 
         if (wildyInterface!=null && Players.getLocal().getY()<=3521) {
             wildyInterface.interact("Enter Wilderness");
-            RandomHandling.randomSleep();
+            Utility.RandomHandling.randomSleep();
         }
         else if(ditch!=null && Players.getLocal().getPosition().getX()<=3110 && Players.getLocal().getY()<=3521){
             ditch.interact("Cross");
-            RandomHandling.randomSleep();
+            Utility.RandomHandling.randomSleep();
         }
         else{
             if(Players.getLocal().getPosition().getY() < 3521){
@@ -303,7 +305,7 @@ public class WildernessLooter extends Script {
 
     public void abandonAttacker(){
         Log.info("Sleeping then abandoning attacker");
-        Time.sleep(RandomHandling.randomNumber(15000,16000));
+        Time.sleep(Utility.RandomHandling.randomNumber(15000,16000));
         abandonTarget();
 
 
@@ -446,7 +448,7 @@ public class WildernessLooter extends Script {
     }
 
     public static int abandonTarget(){
-        int number = RandomHandling.randomNumber(980,1050);
+        int number = Utility.RandomHandling.randomNumber(980,1050);
         if(Dialog.isOpen()){
             Dialog.process(0);
         }
@@ -487,7 +489,7 @@ public class WildernessLooter extends Script {
             CombatHandling.eatFood();
         }
         else{
-            BankHandling.walkAndDepositAllAndWithdraw(energyPredicate, nPotionsToWithdraw());
+            Utility.BankHandling.walkAndDepositAllAndWithdraw(energyPredicate, nPotionsToWithdraw());
         }
     }
 
@@ -523,8 +525,8 @@ public class WildernessLooter extends Script {
 
     public void walkBackFromLumbridge(){
         haveDied=true;
-        if(RunningHandling.shouldRun()){
-            RunningHandling.enableRun();
+        if(shouldRun()){
+            enableRun();
         }
         else if(isDeathInList()){
             dyingSpotsList.clear();
